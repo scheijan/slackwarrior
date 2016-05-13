@@ -3,12 +3,11 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 var Botkit = require('botkit');
 
 var defaultPlugins = require('./defaultPlugins');
-var mePlugins = require('./mePlugins');
-var slackwarrior = require('./slackwarrior');
+var slackwarrior = require('./slackwarriorPlugins');
 
 var controller = Botkit.slackbot({
   debug: false,
-  json_file_store: './jsondb'
+  json_file_store: './slackwarrior_jsondb'
 });
 
 var users = [];
@@ -188,6 +187,5 @@ controller.initChannels = function(bot) {
 
 
 slackwarrior.init(controller);
-// mePlugins.init(controller);
 defaultPlugins.init(controller);
 

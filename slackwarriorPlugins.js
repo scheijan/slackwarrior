@@ -1,4 +1,4 @@
-var dateFormat = require('dateformat');
+var orgDateFormat = require('dateformat');
 var request = require('request');
 var Promise = require('bluebird');
 Promise.promisifyAll(require("request"));
@@ -24,6 +24,51 @@ String.prototype.padLeft = function(l, c) {
     while (str.length < l)
         str = c + str;
     return str;
+}
+
+function dateFormat(d) {
+  return orgDateFormat(d, "yyyy-mm-dd hh:MM");
+}
+
+function getTimeDiff( datetime )
+{
+    var datetime = typeof datetime !== 'undefined' ? datetime : "2016-01-01 01:02:03.123456";
+
+    var datetime = new Date( datetime ).getTime();
+    var now = new Date().getTime();
+
+    if( isNaN(datetime) )
+    {
+        return "";
+    }
+
+    if (datetime < now) {
+      var milisec_diff = now - datetime;
+    } else {
+      var milisec_diff = datetime - now;
+    }
+
+    var days = Math.floor(milisec_diff / 1000 / 60 / (60 * 24));
+
+    var date_diff = new Date( milisec_diff );
+
+    var hours = date_diff.getHours() - 1;
+    var minutes = date_diff.getMinutes();
+
+
+
+    var result = '';
+    if (days > 0) {
+      result = days + 'd'
+    } else if (hours > 0) {
+      result = hours + 'h'
+    } else if (minutes > 0) {
+      result = minutes + 'm'
+    } else {
+      result = date_diff.getSeconds() + 's'
+    }
+    // result = days + '_' + hours + '_' + minutes + '_' + date_diff.getSeconds() + '___' + orgDateFormat()
+    return result;
 }
 
 var init = function (controller) {
@@ -175,9 +220,6 @@ var init = function (controller) {
   // converts a single task into a Slack message attachment
   function task2attachement(task) {
     // basic settings for one attachement in the result message
-
-   
-
     var attachment = {
       "fallback": "this did not work for some reason",
       "fields": [
@@ -209,7 +251,11 @@ var init = function (controller) {
     }
     attachment.fields[1]['value'] = taskProject;
 
-    attachment.title = task.description;
+    var title = task.description;
+    if (task.start) {
+      title = title + ' (active)'
+    }
+    attachment.title = title;
 
     // set the color according to the priority of the task
     if (task.priority == 'H') {
@@ -246,7 +292,6 @@ var init = function (controller) {
 
     })
   }
-
 
   // get a the user's token from the local storage
   function getIntheamToken(userID) {
@@ -304,6 +349,9 @@ var init = function (controller) {
             project = project.padRight(11, ' ')
             // concat the values with some spaces 
             var line = short_id + '  ' + priority + '  ' + project + ' ' + task.description
+            if (task.start) {
+              line = line + ' (active)'
+            }
            
             result.push(line)
           }
@@ -478,8 +526,8 @@ var init = function (controller) {
           } else {
             priority = 'high" :closed_book:'
           }
-          var answer = 'Alright, I\'ve added your task to the list with priority "' + priority
-          bot.reply(message, answer)
+          var answerText = 'Alright, I\'ve added task '+ body.short_id + ' to the list with priority "' + priority
+          bot.reply(message, {text: answerText})
         } else {
           bot.botkit.log('error adding task for ' + message.user, err);
           bot.reply(message, 'I\'m sorry, but there was a problem adding that task to your task list :confused:')
@@ -566,11 +614,180 @@ var init = function (controller) {
     var tokens = text.split(' ');
     var short_id = tokens[0]
     var command = tokens[1]
-    if (command === 'done') {
+    if (!command) {
+      taskDetails(bot, message, short_id);
+    } else if (command === 'done') {
       completeTask(bot, message, short_id)
+    } else if (command === 'start') {
+      startStopTask(bot, message, short_id, 'start')
+    } else if (command === 'stop') {
+      startStopTask(bot, message, short_id, 'stop')
     } else {
       bot.reply(message, 'I\'m sorry, but I don\'t know how to execute the command `' + command + '`, right now I only know `done`.')
     }
+  }
+
+  function startStopTask(bot, message, short_id, mode) {
+    // add a reaction so the user knows we're working on it
+    addReaction(bot, message, 'thinking_face')
+
+    // get a list of all pending tasks
+    getTasks(bot, message, message.user, function (err, response, body) {
+      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
+        var tasks = response.body;
+        // loop over all tasks...
+        for (var i = 0; i < tasks.length; i++) {
+          var task = tasks[i];
+
+          // if this is the task to start/stop
+          if (task.short_id == short_id) {
+
+            getIntheamTokenAsync(bot, message, message.user, function (token) {
+              var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
+         
+              // call the inthe.am API and mark the task as complete
+              request(settings, function (err, response, body) {
+                // remove the thinking_face reaction again
+                removeReaction(bot, message, 'thinking_face')
+                if (!err) {
+                  if (body && body.detail == 'Invalid token.') {
+                    bot.botkit.log('invalid token ' + token + ' for user ' + message.user);
+                    var answer = {channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true}  
+                    bot.api.chat.postMessage(answer, function (err, response) {
+                      if (!err) {
+                        addReaction(bot, response, 'computer')
+                      }
+                    })
+                  } else {
+                    bot.botkit.log(mode + 'ed task ' + short_id + ' for user ' + message.user);
+                    var answerText = 'Ok, I have '
+                    if (mode === 'start') {
+                      answerText = answerText + 'started '
+                    } else {
+                      answerText = answerText + 'stopped '
+                    }
+                    answerText = answerText + 'the timer for task ' + short_id + ' for you. :stopwatch:';
+
+                    bot.reply(message, answerText)
+                  }
+                } else {
+                  bot.reply(message, 'I\m sorry, I was unable to complete task ' + short_id + '. I bet you\'ve already completed it!');
+                  bot.botkit.log('error completing task ' + short_id , err);
+                }
+              })
+            });
+          }
+        }
+      } else {
+        // remove the thinking_face reaction again
+        removeReaction(bot, message, 'thinking_face')
+        bot.botkit.log('error getting tasks for user ' + message.user)
+        bot.reply(message, 'I\'m sorry, but there was a problem completing that task on your task list :confused:')
+      }
+    })
+  
+  }
+
+  function taskDetails(bot, message, short_id) {
+    // add a reaction so the user knows we're working on it
+    addReaction(bot, message, 'thinking_face')
+
+    // get a list of all pending tasks
+    getTasks(bot, message, message.user, function (err, response, body) {
+      // remove the thinking_face reaction again
+      removeReaction(bot, message, 'thinking_face')
+
+      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
+        var tasks = response.body;
+        // loop over all tasks...
+        for (var i = 0; i < tasks.length; i++) {
+          var task = tasks[i];
+          // if this is the task we're looking for
+          if (task.short_id == short_id) {
+            bot.botkit.log('in details', short_id)
+            // basic settings for the result message
+            var answer = {
+              channel: message.channel,
+              as_user: true,
+            }
+            var attachment = {
+              "fallback": "this did not work for some reason",
+               "mrkdwn_in": ["text", "pretext"]
+            }
+
+            // set the color according to the priority of the task
+            if (task.priority == 'H') {
+              attachment.color = 'danger'
+            }
+            if (task.priority == 'M') {
+              attachment.color = 'warning'
+            }
+
+            // format entry- and modified-date
+            var entry = new Date(task.entry);
+            var entryDiff = getTimeDiff(entry);
+            bot.botkit.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', entryDiff)
+            entry = dateFormat(entry);
+            var modified = new Date(task.modified);
+            var modifiedDiff = getTimeDiff(modified);
+            modified = dateFormat(modified);
+            var start;
+            var startDiff = '';
+            if (task.start) {
+              start = new Date(task.start);
+              start = dateFormat(start);
+              startDiff = getTimeDiff(start);
+            }
+            
+            attachment.title = 'Details for task <https://inthe.am/tasks/' + task.id + '|' + task.short_id + '>'
+            var text = '```';
+            text = text + 'ID'.padRight(19, ' ') + short_id + '\n';
+            var description = 'Description'.padRight(19, ' ') + task.description
+            if (task.start) {
+              description = description + ' (active)'
+            }
+            ;
+            text = text + description + '\n'
+            text = text + 'Status'.padRight(19, ' ') + task.status + '\n'
+            if (task.project) {
+              text = text + 'Project'.padRight(19, ' ') + task.project + '\n'
+            }
+            text = text + 'Entered'.padRight(19, ' ') + entry + ' (' + entryDiff + ')\n'
+            if (start) {
+              text = text + 'Start'.padRight(19, ' ') + start + ' (' + startDiff + ')\n'
+            }
+            text = text + 'Last modified'.padRight(19, ' ') + modified + ' (' + modifiedDiff + ')\n'
+            if (task.tags) {
+              var tags = '';
+              text = text + 'Tags'.padRight(19, ' ')
+              for (var j = 0; j < task.tags.length; j++) {
+                var tag = task.tags[j];
+                tags = tags + tag + ' '
+              }
+              text = text + tags + '\n'
+            }
+            text = text + 'UUID'.padRight(19, ' ') + task.uuid + '\n'
+            text = text + 'Urgency'.padRight(19, ' ') + task.urgency + '\n'
+            if (task.priority) {
+              text = text + 'Priority'.padRight(19, ' ') + task.priority + '\n'
+            }
+            attachment.text = text + '```';
+
+            answer.attachments = [attachment];
+            bot.api.chat.postMessage(answer, function (err, response) {
+              if (!err) {
+                bot.botkit.log('task details sent');
+              } else {
+                bot.botkit.log('error sending task details', response, err);     
+              }
+            })
+          }
+        }
+      } else {
+        bot.botkit.log('error getting task details for user ' + message.user)
+        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list :confused:')
+      }
+    })
   }
 
   // * * * conversations * * * //
@@ -627,8 +844,8 @@ var init = function (controller) {
       if (!err) {
         convo.say('If you want me to help you managing your tasks, you\'ll first need an account at inthe.am')
         convo.say('You can sign up with a google account and it\'s completely free! :free:')
-        convo.say('Once you have an account there I need your "token", you can find it on inthe.am on the ":wrench:Cofiguration" page under "API Access"')
-        convo.say('scheijan.net:8000/apikey.png')
+        convo.say('Once you have an account there I need your "token", you can find it on inthe.am/configure under "API Access"')
+        convo.say('slackwarrior.scheijan.net/apikey.png')
         convo.ask('Do you want me to add your token to my dossier now?', [
           {
             pattern: bot.botkit.utterances.yes,

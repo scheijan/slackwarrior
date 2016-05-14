@@ -268,10 +268,13 @@ var init = function (controller) {
 
     // format entry- and modified-date
     var entry = new Date(task.entry);
+    var entryDiff = getTimeDiff(entry);
     entry = dateFormat(entry);
+
     var modified = new Date(task.modified);
+    var modifiedDiff = getTimeDiff(modified);
     modified = dateFormat(modified);
-    var text = 'Created: ' + entry + ' / Modified: ' + modified;
+    var text = 'Created: ' + entry + ' (' + entryDiff + ') / Modified: ' + modified + ' (' + modifiedDiff + ')';
 
     attachment.text = text;
 
@@ -769,7 +772,7 @@ var init = function (controller) {
             attachment.text = text + '```';
 
             answer.attachments = [attachment];
-            
+
             bot.api.chat.postMessage(answer, function (err, response) {
               if (!err) {
                 bot.botkit.log('task details sent');

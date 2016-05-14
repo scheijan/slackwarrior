@@ -3,6 +3,21 @@ var request = require('request-promise');
 
 var init = function (controller) {
 
+  // this event is fired whenever a new member joins the team
+// this is where we could send a welcome message
+//controller.on('team_join', function (bot, message) {
+  // call initUsers again to add that user to the list
+  //controller.initUsers(bot);
+//  var userid = message.user;
+//  bot.botkit.log('userid: ' + JSON.stringify(userid));
+//  bot.api.users.info({user: userid}, function (err, response) {
+//    var username = response.user.name;
+//    bot.botkit.log('username: ', username);
+//    bot.api.chat.postMessage({channel: '@' + username, text: 'Hey there ' + username + '! Welcome to the team =)', as_user: true});
+//  });
+// });
+
+
   controller.hears(['hello', 'hi'], 'direct_message, direct_mention, mention', function(bot, message) {
 
       bot.api.reactions.add({
@@ -174,78 +189,7 @@ var init = function (controller) {
   });
 
 
-  controller.hears(['clear pins in (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
-      var channelName = message.match[1];
-      var channelID = controller.getChannelID(channelName);
-      bot.botkit.log('found ID ' + channelID + ' for  ' + channelName);
-
-      bot.reply(message, 'Please be very careful with this command, removing pinned items cannot be undone :bangbang:')
-      bot.startConversation(message, function(err, convo) {
-
-          convo.ask('Are you sure you want me to remove all pinned items in ' + channelName + '?', [
-              {
-                  pattern: bot.utterances.yes,
-                  callback: function(response, convo) {
-                    convo.say('As you wish...');
-
-                    bot.api.pins.list({channel: channelID}, function (err, res) {
-                      if (!err) {
-                        // controler.storage.shownotes = [];
-                        bot.botkit.log('found ' + res.items.length + ' pins to remove in ' + channelName);
-                        convo.say('Deleting ' + res.items.length + ' pinned items in ' + channelName);
-                        for (var i = res.items.length - 1; i >= 0; i--) {
-                          var pin = res.items[i];
-                          bot.botkit.log('going to remove', pin);
-                          var ts;
-                          if (pin.file && pin.file.id) {
-                            bot.api.pins.remove({channel: channelID, file: pin.file.id}, function (err, res) {
-                            if (err) {
-                              bot.botkit.log('removing pin failed', err);
-                            }
-                          })
-                          } else {
-                            bot.api.pins.remove({channel: channelID, timestamp: pin.message.ts}, function (err, res) {
-                            if (err) {
-                              bot.botkit.log('removing pin failed', err);
-                            }
-                          })
-                          }
-                          
-                        }
-                        convo.say(':heavy_check_mark:');
-                        convo.next(); 
-                      } else {
-                        bot.botkit.log('getting pins failed', err);
-                      }
-                      
-                    })
-                    
-                  }
-              },
-          {
-              pattern: bot.utterances.no,
-              callback: function(response, convo) {
-                  convo.say('Too late, I\'m deleting them anyway...');
-                  convo.say('Deleting...');
-                  convo.say('Nah, I was just kidding, your pinned items are safe :black_joker:');
-                  convo.next();
-              }
-          },
-           {
-              
-              default: true,
-              callback: function(response, convo) {
-                  convo.say('Hm? What did you say? I\'m sorry, I didn\'t understand you... I guess I will take that as a "yes" and delete all your pinned items...');
-                  convo.say('Deleting...');
-                  convo.say('Nah, I was just kidding, your pinned items are safe :black_joker:');
-                  convo.next();
-              }
-          }
-          ]);
-      });
-  });
-
-
+ 
   controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_message,direct_mention,mention', function(bot, message) {
     var os = require('os');
 

@@ -19,6 +19,7 @@ if(typeof(String.prototype.trim) === "undefined")
 // define a methog "padRight" on the String prototype
 String.prototype.padRight = function(l, c) {return this+Array(l-this.length+1).join(c||" ")}
 
+// define a methog "padLeft" on the String prototype
 String.prototype.padLeft = function(l, c) {
     var str = this;
     while (str.length < l)
@@ -26,10 +27,12 @@ String.prototype.padLeft = function(l, c) {
     return str;
 }
 
+// convert a timestamp to a human readable format
 function dateFormat(d) {
   return orgDateFormat(d, "yyyy-mm-dd hh:MM");
 }
 
+// get the delta between two timestamps in a short human readable format
 function getTimeDiff( datetime )
 {
     var datetime = typeof datetime !== 'undefined' ? datetime : "2016-01-01 01:02:03.123456";
@@ -54,8 +57,6 @@ function getTimeDiff( datetime )
 
     var hours = date_diff.getHours() - 1;
     var minutes = date_diff.getMinutes();
-
-
 
     var result = '';
     if (days > 0) {
@@ -85,7 +86,7 @@ var init = function (controller) {
     helpConvo(bot, message)
   })
 
-   // handle all commands that start with "task" (except for "task help") and call their handler functions
+  // handle all commands that start with "task" (except for "task help") and call their handler functions
   controller.hears(['^task'], 'direct_message,direct_mention,mention', function(bot, message) {
     var text = message.text;
     var lcText = message.text.toLowerCase();
@@ -278,7 +279,7 @@ var init = function (controller) {
   }
 
   // get a the user's token from the local storage
-  function getIntheamTokenAsync(bot, message, userID, cb) {
+  function getIntheamToken(bot, message, userID, cb) {
     controller.storage.users.get(userID, function(err, user) {
       if (!err) {
         var token = user.token;
@@ -293,17 +294,11 @@ var init = function (controller) {
     })
   }
 
-  // get a the user's token from the local storage
-  function getIntheamToken(userID) {
-
-    return '17c09286d1e36c71f48a06636fd569cdad03af9a'
-  }
-
   // call the inthe.am API to get a list of all tasks
   function getTasks(bot, message, user, cb) {
-    getIntheamTokenAsync(bot, message, user, function (token) {
+    getIntheamToken(bot, message, user, function (token) {
       var settings = prepareAPI('tasks', 'GET', token);
-      // call the API and return a promise of the result
+      // call the API pass the callback function on
       request(settings, cb);
     })
   }
@@ -501,7 +496,7 @@ var init = function (controller) {
       }
     }
 
-    getIntheamTokenAsync(bot, message, message.user, function (token) {
+    getIntheamToken(bot, message, message.user, function (token) {
       var settings = prepareAPI('tasks', 'POST', token);
 
       settings.body = {
@@ -563,7 +558,7 @@ var init = function (controller) {
             // remember the urgency of the completed task
             completedUrgency = task.urgency;
 
-            getIntheamTokenAsync(bot, message, message.user, function (token) {
+            getIntheamToken(bot, message, message.user, function (token) {
               var settings = prepareAPI('tasks/' + task.id, 'DELETE', token);
          
               // call the inthe.am API and mark the task as complete
@@ -627,6 +622,7 @@ var init = function (controller) {
     }
   }
 
+  // start or stop a task using the inthe.am API (depending on param "mode")
   function startStopTask(bot, message, short_id, mode) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')
@@ -642,10 +638,10 @@ var init = function (controller) {
           // if this is the task to start/stop
           if (task.short_id == short_id) {
 
-            getIntheamTokenAsync(bot, message, message.user, function (token) {
+            getIntheamToken(bot, message, message.user, function (token) {
               var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
          
-              // call the inthe.am API and mark the task as complete
+              // call the inthe.am API and mark the task as started or stopped
               request(settings, function (err, response, body) {
                 // remove the thinking_face reaction again
                 removeReaction(bot, message, 'thinking_face')
@@ -723,10 +719,9 @@ var init = function (controller) {
               attachment.color = 'warning'
             }
 
-            // format entry- and modified-date
+            // format entry-, start- and modified-date and the deltas
             var entry = new Date(task.entry);
             var entryDiff = getTimeDiff(entry);
-            bot.botkit.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', entryDiff)
             entry = dateFormat(entry);
             var modified = new Date(task.modified);
             var modifiedDiff = getTimeDiff(modified);
@@ -774,6 +769,7 @@ var init = function (controller) {
             attachment.text = text + '```';
 
             answer.attachments = [attachment];
+            
             bot.api.chat.postMessage(answer, function (err, response) {
               if (!err) {
                 bot.botkit.log('task details sent');

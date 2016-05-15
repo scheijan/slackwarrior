@@ -32,7 +32,7 @@ controller.on('rtm_open', function (bot, message) {
   // add all channels to global variable channels and update storage.channels
   controller.initChannels(bot);
   // add all users to global variable users and update storage.users
-  controller.initUsers(bot);
+  // controller.initUsers(bot);
 });
 
 

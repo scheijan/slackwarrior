@@ -895,7 +895,7 @@ var init = function (controller) {
   function newTokenConvo(bot, message, user) {
     bot.startPrivateConversation(message, function(err, convo) {
       if (!err) {
-        convo.ask('Ok, to get started please tell me your inthe.am token', function(response, convo) {
+        convo.ask('Ok, great, to get started please tell me your inthe.am token', function(response, convo) {
           convo.ask('Please double check that the token is correct - do you want me to note `' + response.text + '` in my dossier?', [
             {
               pattern: bot.botkit.utterances.yes,
@@ -933,9 +933,16 @@ var init = function (controller) {
             controller.storage.users.save(user, function(err, id) {
               if (!err) {
                 bot.botkit.log('added new token for user ' + message.user, user.token)
-                bot.reply(message, 'Got it. Your token is in my dossier and we can get started now.')
-                bot.reply(message, 'Why don\'t you try it out and add a task to your list? Maybe you need some milk? Try `task add remember the milk`')
-                bot.reply(message, 'And please feel to ask for `task help` at any time if you want me to remind you on how I can assist you with your tasks. :robot_face:')
+                var text = 'Got it. Your token is in my dossier and we can get started now.\n';
+                text = text + 'Why don\'t you try it out and add a task to your list? Maybe you need some milk? Try `task add remember the milk`\n'
+                text = text + 'And please feel to ask for `task help` at any time if you want me to remind you on how I can assist you with your tasks. :robot_face:'
+                var answer = {channel: message.channel, text: text, as_user: true}  
+                bot.api.chat.postMessage(answer, function (err, response) {
+                  if (!err) {
+                    addReaction(bot, response, 'computer')
+                  }
+                })
+                
               } else {
                 bot.reply(message, ERRORMESSAGE)
                 bot.botkit.log('error saving user token', err)
@@ -944,7 +951,12 @@ var init = function (controller) {
           // the convo did not end with status "completed"
           } else {
             // this happens if the conversation ended prematurely for some reason
-            bot.reply(message, 'OK, nevermind!');
+            var answer = {channel: message.channel, text: 'Alright. If you want to try again please ask me about `onboarding` or just tap on the :computer:.', as_user: true}  
+            bot.api.chat.postMessage(answer, function (err, response) {
+              if (!err) {
+                addReaction(bot, response, 'computer')
+              }
+            })
           }
         });
       }

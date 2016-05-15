@@ -284,16 +284,16 @@ var init = function (controller) {
   // get a the user's token from the local storage
   function getIntheamToken(bot, message, userID, cb) {
     controller.storage.users.get(userID, function(err, user) {
-      if (!err) {
-        var token = user.token;
-        bot.botkit.log('found user token in local storage', token)
-        // token = '17c09286d1e36c71f48a06636fd569cdad03af9a'
-        cb(token)
+      if (!err && user && user.token && user.token.length > 0) {
+      
+          var token = user.token;
+          bot.botkit.log('found user token in local storage', token)
+          cb(token)
+        
       } else {
-        bot.reply(message, ERRORMESSAGE)
-        bot.botkit.log('error getting user from storage', err)
+        bot.reply(message, 'Looks like we haven\'t been introduced yet. I\' Slackwarrior and I\'m here to help you manage your task. Please feel free to ask me for `help` any time. :robot_face:')
+        bot.botkit.log('error getting user or user token from storage', err)
       }
-
     })
   }
 
@@ -693,6 +693,7 @@ var init = function (controller) {
 
     // get a list of all pending tasks
     getTasks(bot, message, message.user, function (err, response, body) {
+      var found = false;
       // remove the thinking_face reaction again
       removeReaction(bot, message, 'thinking_face')
 
@@ -703,6 +704,7 @@ var init = function (controller) {
           var task = tasks[i];
           // if this is the task we're looking for
           if (task.short_id == short_id) {
+            found = true;
             bot.botkit.log('in details', short_id)
             // basic settings for the result message
             var answer = {
@@ -783,6 +785,10 @@ var init = function (controller) {
           }
         }
       } else {
+        bot.botkit.log('error getting task details for user ' + message.user)
+        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list :confused:')
+      }
+      if (!err && !found) {
         bot.botkit.log('error getting task details for user ' + message.user)
         bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list :confused:')
       }
@@ -926,7 +932,7 @@ var init = function (controller) {
             // save the token the local storage
             controller.storage.users.save(user, function(err, id) {
               if (!err) {
-                bot.botkit.log('added new token for user + message.user', user.token)
+                bot.botkit.log('added new token for user ' + message.user, user.token)
                 bot.reply(message, 'Got it. Your token is in my dossier and we can get started now.')
                 bot.reply(message, 'Why don\'t you try it out and add a task to your list? Maybe you need some milk? Try `task add remember the milk`')
                 bot.reply(message, 'And please feel to ask for `task help` at any time if you want me to remind you on how I can assist you with your tasks. :robot_face:')

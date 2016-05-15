@@ -16,7 +16,7 @@ var bot = controller.spawn({
   // familie
   // token: '***REMOVED***',
   // my adaeze
-  //token: '***REMOVED***',
+  // token: '***REMOVED***',
   // metaebene
   // token: '***REMOVED***',
   // slackwarrior
@@ -32,7 +32,6 @@ controller.on('rtm_open', function (bot, message) {
   controller.initChannels(bot);
   // add all users to global variable users and update storage.users
   controller.initUsers(bot);
-  bot.botkit.log(channels);
 });
 
 

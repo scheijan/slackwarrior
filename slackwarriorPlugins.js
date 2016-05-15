@@ -40,45 +40,44 @@ function dateFormat(d) {
 }
 
 // get the delta between two timestamps in a short human readable format
-function getTimeDiff( datetime )
-{
-    var datetime = typeof datetime !== 'undefined' ? datetime : "2016-01-01 01:02:03.123456";
+function getTimeDiff( datetime ) {
+  var datetime = typeof datetime !== 'undefined' ? datetime : "2016-01-01 01:02:03.123456";
 
-    var datetime = new Date( datetime ).getTime();
-    var now = new Date().getTime();
+  var datetime = new Date( datetime ).getTime();
+  var now = new Date().getTime();
 
-    if( isNaN(datetime) )
-    {
-        return "";
-    }
+  if( isNaN(datetime) )
+  {
+      return "";
+  }
 
-    if (datetime < now) {
-      var milisec_diff = now - datetime;
-    } else {
-      var milisec_diff = datetime - now;
-    }
+  if (datetime < now) {
+    var milisec_diff = now - datetime;
+  } else {
+    var milisec_diff = datetime - now;
+  }
 
-    var days = Math.floor(milisec_diff / 1000 / 60 / (60 * 24));
+  var days = Math.floor(milisec_diff / 1000 / 60 / (60 * 24));
 
-    var date_diff = new Date( milisec_diff );
+  var date_diff = new Date( milisec_diff );
 
-    var hours = date_diff.getHours() - 1;
-    var minutes = date_diff.getMinutes();
+  var hours = date_diff.getHours() - 1;
+  var minutes = date_diff.getMinutes();
 
-    var result = '';
-    if (days > 0) {
-      result = days + 'd'
-    } else if (hours > 0) {
-      result = hours + 'h'
-    } else if (minutes > 0) {
-      result = minutes + 'm'
-    } else {
-      result = date_diff.getSeconds() + 's'
-    }
-    // result = days + '_' + hours + '_' + minutes + '_' + date_diff.getSeconds() + '___' + orgDateFormat()
-    return result;
+  var result = '';
+  if (days > 0) {
+    result = days + 'd'
+  } else if (hours > 0) {
+    result = hours + 'h'
+  } else if (minutes > 0) {
+    result = minutes + 'm'
+  } else {
+    result = date_diff.getSeconds() + 's'
+  }
+  return result;
 }
 
+// shuffle an array and return it
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
 
@@ -140,7 +139,7 @@ var init = function (controller) {
   });
 
   // handle request to the bot to introduce itself and provide ways to get help
-  controller.hears(['introduce','Introduce'], 'direct_message,direct_mention,mention', function(bot, message) {
+  controller.hears(['introduce'], 'direct_message,direct_mention,mention', function(bot, message) {
     // make it look like the bot is typing and wait a couple of seconds to increase the illusion of a user
     bot.startTyping(message);
     setTimeout(function () {
@@ -713,6 +712,7 @@ var init = function (controller) {
   
   }
 
+  // get the details for the specified task
   function taskDetails(bot, message, short_id) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')

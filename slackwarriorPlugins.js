@@ -6,6 +6,12 @@ Promise.promisifyAll(require("request"));
 // general error messages
 var ERRORMESSAGE = 'I\'m sorry, but there was an internal problem, it\'s probably the old hydraulic pump again. Please try again later, it should be less squeaky once it\'s cooled down a little...'
 var TASKERRORMESSAGE = 'I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.'
+var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:','Looks like you should have been working on something else though... :alarm_clock:']
+
+function msgNotMostUrgetTask() {
+  var messages = shuffle(NOT_MOST_URGENT_MESSAGES);
+  return messages[0]
+}
 
 // define a method "trim" on the String prototype
 if(typeof(String.prototype.trim) === "undefined")
@@ -71,6 +77,25 @@ function getTimeDiff( datetime )
     // result = days + '_' + hours + '_' + minutes + '_' + date_diff.getSeconds() + '___' + orgDateFormat()
     return result;
 }
+
+function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
 
 var init = function (controller) {
 
@@ -588,7 +613,7 @@ var init = function (controller) {
                     bot.reply(message, answerText)
                     // if the completed task was not the one with the highest urgency
                     if (completedUrgency < highestUrgency) {
-                      bot.reply(message, 'You have more urgent tasks though... :zipper_mouth_face:')
+                      bot.reply(message, msgNotMostUrgetTask())
                     }
 
                   }

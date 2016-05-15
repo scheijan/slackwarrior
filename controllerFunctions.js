@@ -27,7 +27,7 @@ exports.decorate = function (controller, bot) {
     if (channelName.indexOf('#') > -1) {
       channelName = channelName.replace('#','');
     }
-    for (var i = channels.length - 1; i >= 0; i--) {
+    for (var i = controller.channels.length - 1; i >= 0; i--) {
       var c = controller.channels[i];
       if (c.name === channelName) {
         return c;

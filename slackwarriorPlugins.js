@@ -4,14 +4,15 @@ var Promise = require('bluebird');
 Promise.promisifyAll(require("request"));
 
 // general error messages
-var ERRORMESSAGE = 'I\'m sorry, but there was an internal problem, it\'s probably the old hydraulic pump again. Please try again later, it should be less squeaky once it\'s cooled down a little...'
-var TASKERRORMESSAGE = 'I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.'
+var GENERAL_ERROR_MESSAGES = ['I\'m sorry, but there was an internal problem, it\'s probably the old hydraulic pump again. Please try again later, it should be less squeaky once it\'s cooled down a little...']
+var TASK_ERROR_MESSAGES = ['I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.']
 var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:','Looks like you should have been working on something else though... :alarm_clock:']
 
-function msgNotMostUrgetTask() {
-  var messages = shuffle(NOT_MOST_URGENT_MESSAGES);
-  return messages[0]
+function randomMessage(messages) {
+  var randomMessages = shuffle(messages)
+  return randomMessages[0]
 }
+
 
 // define a method "trim" on the String prototype
 if(typeof(String.prototype.trim) === "undefined")
@@ -121,7 +122,7 @@ var init = function (controller) {
       if (text && text.length > 0) {
         addTask(bot, message, text)
       } else {
-        bot.reply(message, TASKERRORMESSAGE)
+        bot.reply(message, randomMessage(TASK_ERROR_MESSAGES))
       }      
     // if the second token is a digit
     } else if (lcText.indexOf('task ') > -1 && /^-?\d+\.?\d*$/.test(lcText.split('task ')[1].split(' ')[0])) {
@@ -134,7 +135,7 @@ var init = function (controller) {
     } else if (lcText == 'task') {
       sendTasks(bot, message);  
     } else {
-      bot.reply(message, TASKERRORMESSAGE)
+      bot.reply(message, randomMessage(TASK_ERROR_MESSAGES))
     }
   });
 
@@ -394,7 +395,7 @@ var init = function (controller) {
               if (err) {
                 bot.botkit.log('err uploading tasks snippet', err);
                 bot.reply(message, 'There was some problem uploading the tasks file')
-                bot.reply(message, ERRORMESSAGE)
+                bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
               } else {
                 bot.reply(message, 'These are your ' + l + ' pending tasks, sorted by urgency :notebook:')
               }
@@ -403,7 +404,7 @@ var init = function (controller) {
           bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
         }
       } else {
-        bot.reply(message, ERRORMESSAGE)
+        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
         bot.botkit.log('error getting all taks for user ' + message.user)
       }
       
@@ -485,7 +486,7 @@ var init = function (controller) {
       } else {
         bot.botkit.log('something went wrong getting tasks for ' + message.user, err);
         // remove the thinking face again
-        bot.reply(message, ERRORMESSAGE)
+        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
       }
     })
   }
@@ -613,7 +614,7 @@ var init = function (controller) {
                     bot.reply(message, answerText)
                     // if the completed task was not the one with the highest urgency
                     if (completedUrgency < highestUrgency) {
-                      bot.reply(message, msgNotMostUrgetTask())
+                      bot.reply(message, randomMessage(NOT_MOST_URGENT_MESSAGES))
                     }
 
                   }
@@ -910,7 +911,7 @@ var init = function (controller) {
         })
 
       } else {
-        bot.reply(ERRORMESSAGE)
+        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
         bot.botkit.log('error starting onboarding convo', err)
       }
     })    
@@ -969,7 +970,7 @@ var init = function (controller) {
                 })
                 
               } else {
-                bot.reply(message, ERRORMESSAGE)
+                bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
                 bot.botkit.log('error saving user token', err)
               }
             });

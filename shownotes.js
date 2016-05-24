@@ -42,7 +42,7 @@ controller.on('rtm_close', function (bot, message) {
 });
 
 
-controller = controllerFunctions.decorate(controller)
+controller = controllerFunctions.decorate(controller, bot)
 
 shownotesPlugins.init(controller);
 defaultPlugins.init(controller);

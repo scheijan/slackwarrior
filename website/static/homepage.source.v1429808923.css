@@ -1,0 +1,103 @@
+
+/* Fonts */
+@font-face {
+	font-family: 'VAGRundschriftD';
+	src: url("/webfonts/eot/style_5784.eot");
+	src: url("/webfonts/eot/style_5784.eot?#iefix") format("embedded-opentype"), url("/webfonts/woff/style_5784.woff") format("woff"), url("/webfonts/ttf/style_5784.ttf") format("truetype"), url("/webfonts/svg/style_5784.svg#VAGRundschriftD") format("svg");
+}
+@font-face {
+	font-family: 'VAGRundschriftD-Lig';
+	src: url("/webfonts/eot/style_32002.eot");
+	src: url("/webfonts/eot/style_32002.eot?#iefix") format("embedded-opentype"), url("/webfonts/woff/style_32002.woff") format("woff"), url("/webfonts/ttf/style_32002.ttf") format("truetype"), url("/webfonts/svg/style_32002.svg#VAGRundschriftD-Lig") format("svg");
+}
+
+/* Layout */
+body {
+  	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  	line-height: 1.5rem;
+	font-size: 1.25rem;
+	font-weight: 300;
+  	background-color: #FFF;
+	text-align: left;
+  	margin: 0;
+  	padding: 0;
+  	background: url("/img/landing-bg-small.jpeg") top center repeat-x;
+}
+.container {
+	max-width: 720px;
+	width: auto;
+	position: relative;
+	margin: 0 auto 5rem;
+}
+.column {
+	float: left;
+	width: 45%;
+	margin: 0 4rem 0 0;
+}
+#footer {
+	font-size: 1rem;
+	line-height: 1.5rem;
+	color: #AAA;
+}
+#dates {
+	position: absolute;
+	top: -340px;
+	left: 358px;
+	color: #c0c4c2;
+	font-size: 1.5rem;
+	letter-spacing: 1px;
+	font-family: VAGRundschriftD-Lig;
+}
+
+/* Type */
+h1, h2, h3, p {
+	padding: 0;
+	margin: 0 0 1rem;
+}
+h1 {
+	margin-top: 23.5rem; 
+	text-align: center;
+	font-size: 2.75rem;
+	line-height: 2rem;
+	color: #897968;
+}
+h2 {
+	font-size: 1.8rem;
+	color: #444;
+}
+h2.subheading {
+	text-align: center;
+	color: #897968;
+}
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+	h2.subheading {
+		width: 65%;
+		margin: 0 auto 1rem;
+		font-size: 2rem;
+	}
+}
+h3 {
+	font-size: 1.5rem;
+	font-family: VAGRundschriftD, "Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif;
+	margin-bottom: 0.25rem;
+}
+p {
+  	color: #444;
+}
+a {
+  color: #1e637a;
+  font-weight: 500;
+}
+
+/* Lists */
+ul, li {
+	padding: 0;
+	margin: 0 0 0.5rem;
+	font-size: 1.25rem;
+	line-height: 1.5rem;
+}
+ul {
+	list-style-type: none;
+	margin-bottom: 2.5rem;
+}

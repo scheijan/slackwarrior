@@ -230,7 +230,7 @@ var init = function (controller) {
     });
   }
 
-  // removes the given reaction to the given message
+  // removes the given reaction from the given message
   function removeReaction(bot, message, reaction) {
     bot.api.reactions.remove({
       timestamp: message.ts,
@@ -709,7 +709,6 @@ var init = function (controller) {
         bot.reply(message, 'I\'m sorry, but there was a problem completing that task on your task list :confused:')
       }
     })
-  
   }
 
   // get the details for the specified task

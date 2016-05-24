@@ -272,10 +272,18 @@ var init = function (controller) {
     });
   });
 
+
+  function cleanChannelID(channelID) {
+    channelID = channelID.replace('#','');
+    channelID = channelID.replace('<','');
+    channelID = channelID.replace('>','');
+    return channelID
+  }
+
   function shownotes(bot, message, channelName) {
     bot.botkit.log('creating shownotes for channel ' + channelName);
     bot.reply(message, 'Please hold on just a second while I try to generate the shownotes for ' + channelName)
-    var channelID = controller.getChannelID(channelName);
+    var channelID = cleanChannelID(channelName)
     var channel = controller.getChannelByID(channelID);
     var errorMessage = 'Ummm... Sorry, but that did not work as expected... Did I maybe read that wrong? Which channel did you want me get the shownotes for? I read "' + channelName + '", but my eyes aren\'t what they used to be... :eyeglasses:';
 
@@ -339,7 +347,7 @@ var init = function (controller) {
             urls.push(url);
             // request will return a promise, add that to another array
             // set simple = false to prevent rejections of the promise for ... reasons
-            promises.push(request.getAsync({uri: urls[i], simple: false, timeout: 10000}));
+            promises.push(request.getAsync({uri: url, simple: true, timeout: 10000}));
           }
         }
       }
@@ -348,6 +356,7 @@ var init = function (controller) {
     bot.botkit.log('got ' + urls.length + ' URLs to check');
     bot.botkit.log(urls);
     // bot.reply(message, 'Please hold on just a second while I get some titles for those ' + urls.length + ' URLs you got there...')
+
 
     promises2shownotes(bot, message, urls, promises, channel, 'pinned items')
   }

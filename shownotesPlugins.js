@@ -10,10 +10,52 @@ var init = function (controller) {
     shownotes(bot, message, channelName);
   });
 
+  controller.hears(['shownote (.*)'], 'direct_mention,mention', function(bot, message) {
+    var channelID = message.channel;
+    controller.storage.channels.get(channelID, function(err, channel) {
+      if (!err) {
+        if (channel.listening) {
+          if (!channel.links) {
+            channel.links = [];
+          }
+
+          var shownote = 'SHOWNOTE:' + message.match[1];
+      
+          channel.links.push(shownote);
+          bot.botkit.log('saved a shownote', shownote);
+
+          controller.storage.channels.save(channel, function(err, id) {
+            if (err) {
+              bot.botkit.log('error saving link', err, id);
+            } else {
+              bot.botkit.log('saved ' + channel.links.length + ' links');
+              bot.api.reactions.add({
+                timestamp: message.ts,
+                channel: message.channel,
+                name: 'ballot_box_with_check',
+                }, function(err, res) {
+                if (err) {
+                  bot.botkit.log('failed to add ' + reaction + ' reaction', err);
+                }
+              });              
+            }
+          });
+            
+          
+        } else {
+          bot.reply(message, 'I\'m not logging links in this channel right now. If you want me to `start listening` just tell me...')
+        }
+      } else {
+        bot.botkit.log('getting channel failed', err, channel);
+      }
+    });
+  });
+
   controller.hears(['start listening to (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var channelName = message.match[1];
     bot.botkit.log('trying to listen to channel ' + channelName);
-    var channelID = controller.getChannelID(channelName);
+    // var channelID = controller.getChannelID(channelName);
+    var channelID = cleanChannelID(channelName)
     var errorMessage = 'Ummm... Sorry, but that did not work as expected... Did I maybe read that wrong? Which channel did you want me to listen to? I read "' + channelName + '", but my eyes aren\'t what they used to be... :eyeglasses:';
     bot.botkit.log('channelID', channelID);
     controller.storage.channels.get(channelID, function(err, channel) {
@@ -40,7 +82,7 @@ var init = function (controller) {
   controller.hears(['stop listening to (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var channelName = message.match[1];
     bot.botkit.log('listening to channel ' + channelName);
-    var channelID = controller.getChannelID(channelName);
+    var channelID = cleanChannelID(channelName)
     var errorMessage = 'Ummm... Sorry, but that did not work as expected... Did I maybe read that wrong? Which channel did you want me to stop listening to? I read "' + channelName + '", but my eyes aren\'t what they used to be... :eyeglasses:';
     // bot.botkit.log('channelID', channelID);
     controller.storage.channels.get(channelID, function(err, channel) {
@@ -71,8 +113,8 @@ var init = function (controller) {
                     {
                       pattern: bot.botkit.utterances.no,
                       callback: function(response, convo) {
-                        bot.reply(message, 'Alright, as you wish. If you change your mind later just ask me for `shownotes ' + channelName + '` and I will get them for you.');
-                        convo.stop();
+                        convo.say('Alright, as you wish. If you change your mind later just ask me for `shownotes ' + channelName + '` and I will get them for you.');
+                        convo.next();
                       }
                     },
                     {
@@ -153,7 +195,7 @@ var init = function (controller) {
 
   controller.hears(['clear pins in (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
       var channelName = message.match[1];
-      var channelID = controller.getChannelID(channelName);
+      var channelID = cleanChannelID(channelName)
       bot.botkit.log('found ID ' + channelID + ' for  ' + channelName);
 
       bot.reply(message, 'Please be very careful with this command, removing pinned items cannot be undone :bangbang:')
@@ -181,10 +223,10 @@ var init = function (controller) {
                     })
                     } else {
                       bot.api.pins.remove({channel: channelID, timestamp: pin.message.ts}, function (err, res) {
-                      if (err) {
-                        bot.botkit.log('removing pin failed', err);
-                      }
-                    })
+                        if (err) {
+                          bot.botkit.log('removing pin failed', err);
+                        }
+                      })
                     }
                     
                   }
@@ -220,7 +262,7 @@ var init = function (controller) {
 
   controller.hears(['clear links in (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var channelName = message.match[1];
-    var channelID = controller.getChannelID(channelName);
+    var channelID = cleanChannelID(channelName)
     bot.botkit.log('found ID ' + channelID + ' for  ' + channelName);
 
     bot.reply(message, 'Please be very careful with this command, deleting saved links cannot be undone :bangbang:')
@@ -253,10 +295,11 @@ var init = function (controller) {
       {
         pattern: bot.utterances.no,
         callback: function(response, convo) {
+            bot.botkit.log('a no is a no', convo)
             convo.say('Too late, I\'m deleting them anyway...');
             convo.say('Deleting...');
             convo.say('Nah, I was just kidding, your saved links are safe :black_joker:');
-            convo.stop();
+            convo.next();
         }
       },
         {
@@ -265,7 +308,7 @@ var init = function (controller) {
               convo.say('Hm? What did you say? I\'m sorry, I didn\'t understand you... I guess I will take that as a "yes" and delete all your saved links...');
               convo.say('Deleting...');
               convo.say('Nah, I was just kidding, your saved links are safe :black_joker:');
-              convo.repeat();
+              convo.next();
           }
         }
       ]);
@@ -304,8 +347,13 @@ var init = function (controller) {
     // if there are pinned items in the channel also generate shownotes from those
     bot.api.pins.list({channel: channelID}, function (err, res) {
       if (!err) {
-        bot.botkit.log('found ' + res.items.length + ' pins in ' + channelID);
-        pins2osf(bot, message, channel, res.items);
+        var pinsLength = res.items.length;
+        bot.botkit.log('found ' + pinsLength + ' pins in ' + channelID);
+        if (pinsLength > 0) {
+          pins2osf(bot, message, channel, res.items);  
+        } else {
+          bot.reply(message, 'I\'m sorry, but I can\'t find any pinned items for ' + channelName);
+        }        
       } else {
         bot.botkit.log('pins failed', err);
       }
@@ -387,7 +435,15 @@ var init = function (controller) {
           title = '__MISSING_TITLE__';
         }
         // concat the title and the corresponding URL and add that to the result
-        var line = title + ' <' + urls[i] + '>\n';
+
+        var url = urls[i];
+        var line;
+        if (url.indexOf('SHOWNOTE:') > -1) {
+          line = url.split('SHOWNOTE:')[1]
+        } else {
+          line = title + ' <' + urls[i] + '>\n';  
+        }
+        
         // bot.botkit.log('adding line', line);
         result = result + line;
         

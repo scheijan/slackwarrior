@@ -125,7 +125,7 @@ var init = function (controller) {
       }      
     // if the second token is a digit
     } else if (lcText.indexOf('task ') > -1 && /^-?\d+\.?\d*$/.test(lcText.split('task ')[1].split(' ')[0])) {
-      text = text.split('task ')[1]
+      text = text.substring(5, text.length)
       changeTask(bot, message, text)
     // task list
     } else if (lcText.indexOf('task list') > -1) {
@@ -490,51 +490,120 @@ var init = function (controller) {
     })
   }
 
+  function cl2task(commandLine, oldTask) {
+    // initialize a task object with default priority = 'L'
+    var result = {
+      description: '',
+      priority: 'L',
+      tags: [],
+    };
+    // if we're updating a task remember the old values
+    if (oldTask) {
+      result = oldTask;
+    }
+
+    var tokens = commandLine.split(' ')
+    var descriptionParts = []
+
+    for (var i = 0; i < tokens.length; i++) {
+      var token = tokens[i];
+      // if it was a modifier
+      if (token.indexOf(':') > -1) {
+        var key = token.split(':')[0];
+        var value = token.split(':')[1];
+        key = resolveModifierShorthand(key);
+        // special handling for "priority" which has some shorthand versions
+        if (key === 'priority') {
+          value = resolvePriority(value)
+          result[key] = value;
+        } else if (key === 'description') {
+          descriptionParts.push(value)
+        } else {
+          result[key] = value;
+        }
+        
+      // if we're adding a tag
+      } else if (token.startsWith('+')) {
+        var tag = token.split('+')[1]
+        // if the tag is not already in the list of tags
+        if (result.tags.indexOf(tag) == -1) {
+          result.tags.push(tag)
+        }
+      // if we're removing a tag
+      } else if (token.startsWith('-')) {
+        var tag = token.split('-')[1]
+        var index = result.tags.indexOf(tag)
+        if (index > -1) {
+          result.tags.splice(index, 1);
+        }
+      // if it was none of the above we're creating a new task and this part of the description
+      } else {
+        descriptionParts.push(token)
+      }
+    }
+
+    if (descriptionParts.length > 0) {
+      result.description = descriptionParts.join(' ').trim()
+    }
+
+    return result;
+  }
+
+  function resolveModifierShorthand(modifier) {
+    var modifiers = {
+      priority: 'priority',
+      priorit: 'priority',
+      priori: 'priority',
+      prior: 'priority',
+      prio: 'priority',
+      pri: 'priority',
+      project: 'project',
+      projec: 'project',
+      proje: 'project',
+      proj: 'project',
+      pro: 'project',
+      description: 'description',
+      descriptio: 'description',
+      descripti: 'description',
+      descript: 'description',
+      descrip: 'description',
+      descri: 'description',
+      descr: 'description',
+      desc: 'description',
+      des: 'description',
+      de: 'description',
+      d: 'description',
+    }
+
+    modifier = modifier.toLowerCase()
+
+    return modifiers[modifier];
+  }
+
+  function resolvePriority(prio) {
+    prio = prio.toLowerCase()
+    if (prio === 'h' || prio === 'hi' || prio === 'hig' || prio === 'high') {
+      return 'H'
+    } else if (prio === 'm' || prio === 'me' || prio === 'med' || prio === 'medi' || prio === 'mediu' || prio === 'medium') {
+      return 'M'
+    } else {
+      return 'L'
+    }
+  }
+
   // parse the user's command and add a task using the inthe.am API
   function addTask(bot, message, text) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')
 
-    var tokens = text.split(' ')
+    // create a task object from the user input
+    var task = cl2task(text)
 
-    var taskText = [];
-    var priority = 'L';
-    var project = '';
-    var tags = [];
-
-    // loop over all tokens and extract project and priority
-    for (var i = 0; i < tokens.length; i++) {
-      var token = tokens[i];
-      
-      if ((token == 'priority:H') || (token == 'priority:high') || (token == 'prio:H') || (token == 'prio:high')) {
-        priority = 'H';
-      } else if (token == 'priority:M' || token == 'priority:medium' || token == 'prio:M' || token == 'prio:medium') {
-        priority = 'M';
-      } else if (token == 'priority:L' || token == 'priority:low' || token == 'prio:L' || token == 'prio:low') {
-        priority = 'L';
-      } else if (token.startsWith('+')) {
-        tag = token.split('+')[1]
-        tags.push(tag)
-      } else if (token.indexOf('project:') > -1) {
-        project = token.split('project:')[1].trim()
-      } else if (token.indexOf('pro:') > -1) {
-        project = token.split('pro:')[1].trim()
-      } else {
-        taskText.push(token)
-      }
-    }
-
+    // get the token for the user 
     getIntheamToken(bot, message, message.user, function (token) {
       var settings = prepareAPI('tasks', 'POST', token);
 
-      settings.body = {
-        description: taskText.join(' ').trim(),
-        priority: priority,
-        tags: tags
-      }
-      if (project !== '') {
-        settings.body.project = project;
-      }
+      settings.body = task;
 
       // call the inthe.am API to add the new task
       request(settings, function (err, response, body) {
@@ -542,9 +611,10 @@ var init = function (controller) {
         removeReaction(bot, message, 'thinking_face')
         if (!err && (!body.detail || body.detail != 'Invalid token.')) {
           bot.botkit.log('added task for ' + message.user);
-          if (priority == 'L') {
+          var priority;
+          if (task.priority == 'L') {
             priority = 'low" :blue_book:';
-          } else if (priority == 'M') {
+          } else if (task.priority == 'M') {
             priority = 'medium" :notebook_with_decorative_cover:'
           } else {
             priority = 'high" :closed_book:'
@@ -557,6 +627,64 @@ var init = function (controller) {
         }
       })      
     });
+  }
+
+  // parse the user's command and add a task using the inthe.am API
+  function modifyTask(bot, message, short_id, text) {
+    // add a reaction so the user knows we're working on it
+    addReaction(bot, message, 'thinking_face')
+    bot.botkit.log('text', text)
+    var tokens = text.split(' ')
+    tokens.splice(0,2)
+    text = tokens.join(' ')
+    bot.botkit.log('text', text)
+
+    // get a list of all pending tasks
+    getTasks(bot, message, message.user, function (err, response, body) {
+      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
+        var tasks = response.body;
+        // loop over all tasks...
+        for (var i = 0; i < tasks.length; i++) {
+          var task = tasks[i];
+
+          // if this is the task to start/stop
+          if (task.short_id == short_id) {
+
+            // create a task object from old task and the user input 
+            var newTask = cl2task(text, task)
+
+            bot.botkit.log('newTask', newTask)
+
+            // get the token for the user 
+            getIntheamToken(bot, message, message.user, function (token) {
+              var settings = prepareAPI('tasks/' + task.id, 'PUT', token);
+
+              settings.body = newTask;
+
+              // call the inthe.am API to add the new task
+              request(settings, function (err, response, body) {
+                // remove the reaction again
+                removeReaction(bot, message, 'thinking_face')
+                if (!err && (!body.detail || body.detail != 'Invalid token.')) {
+                  bot.botkit.log('changed task for ' + message.user);
+                  // bot.botkit.log('', response);
+
+                 
+                  var answerText = 'Alright, I\'ve changed task '+ body.short_id + ' for you.'
+                  bot.reply(message, {text: answerText})
+                } else {
+                  bot.botkit.log('error modifying task for ' + message.user, err);
+                  bot.reply(message, 'I\'m sorry, but there was a problem changing that task :confused:')
+                }
+              })      
+            });
+          }
+        }
+      }
+    })
+
+
+
   }
 
   // mark as task as completed using the inthe.am API
@@ -645,6 +773,8 @@ var init = function (controller) {
       startStopTask(bot, message, short_id, 'start')
     } else if (command === 'stop') {
       startStopTask(bot, message, short_id, 'stop')
+    } else if (command === 'modify') {
+      modifyTask(bot, message, short_id, text)
     } else {
       bot.reply(message, 'I\'m sorry, but I don\'t know how to execute the command `' + command + '`, right now I only know `done`.')
     }

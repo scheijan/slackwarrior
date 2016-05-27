@@ -316,8 +316,58 @@ var init = function (controller) {
           cb(token)
         
       } else {
-        bot.reply(message, 'Looks like we haven\'t been introduced yet. I\' Slackwarrior and I\'m here to help you manage your task. Please feel free to ask me for `help` any time. :robot_face:')
+        bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your task. Please feel free to ask me for `help` any time. :robot_face:')
         bot.botkit.log('error getting user or user token from storage', err)
+      }
+    })
+  }
+
+  // wrapper function for API requests to inthe.am
+  function apiRequest(bot, message, settings, cb) {
+    request(settings, function (err, response, body) {
+      var rc = response.statusCode;
+      
+      // if this was not a success
+      if (rc !== 200 && rc !== 201) {
+        bot.botkit.log('API request error - err', err)
+        bot.botkit.log('API request error - res', response)
+        bot.botkit.log('API request error - body', body)
+        // remove the thinking_face reaction again
+        removeReaction(bot, message, 'thinking_face')
+      }
+      // general error occured
+      if (err || !rc) {
+        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
+      // malformed request, see error details
+      } else if (rc === 400) {
+        bot.reply(message, 'I\'m sorry, but it looks like inthe.am had some trouble with that :confused:') 
+        bot.reply(message, 'Maybe their message(s) can help you narrowing it down?')
+        for (var prop in body) {
+          if (body.hasOwnProperty(prop)) {
+            bot.reply(message, '`' + prop + '` : ' + body[prop].join(' '))
+          }
+        }
+      // entity does not exist    
+      } else if (rc === 404) {  
+        bot.reply(message, 'I\'m sorry, but it looks like that task doesn\'t even exist? :confused:') 
+      // repo locked
+      } else if (rc === 409) {  
+        bot.reply(message, 'I\'m sorry, but it looks like your repository is locked. You should check on inthe.am for more information...')
+      // inthe.am server error      
+      } else if (rc === 500) {   
+        bot.reply(message, 'I\'m sorry, but it looks like inthe.am is having some troubles right now. The error has been logged and the admins have been notified. Please try again in a little while.')     
+      // auth
+      } else if (rc === 401 || rc === 403) {
+        
+        var answer = {channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true}  
+        bot.api.chat.postMessage(answer, function (err, response) {
+          if (!err) {
+            addReaction(bot, response, 'computer')
+          }
+        })        
+      // success
+      } else if (rc === 200 || rc === 201) {
+        cb(err, response, body)
       }
     })
   }
@@ -327,7 +377,7 @@ var init = function (controller) {
     getIntheamToken(bot, message, user, function (token) {
       var settings = prepareAPI('tasks', 'GET', token);
       // call the API pass the callback function on
-      request(settings, cb);
+      apiRequest(bot, message, settings, cb);
     })
   }
 
@@ -516,6 +566,10 @@ var init = function (controller) {
         if (key === 'priority') {
           value = resolvePriority(value)
           result[key] = value;
+        } else if (key === 'status') {
+          value = resolveStatus(value)
+          result[key] = value;
+
         } else if (key === 'description') {
           descriptionParts.push(value)
         } else {
@@ -572,7 +626,25 @@ var init = function (controller) {
       desc: 'description',
       des: 'description',
       de: 'description',
-      d: 'description',
+      status: 'status',
+      statu: 'status',
+      stat: 'status',
+      due: 'due',
+      du: 'due',
+      start: 'start',
+      star: 'start',
+      wait: 'wait',
+      wai: 'wait',
+      wa: 'wait',
+      w: 'wait',
+      scheduled: 'scheduled',
+      schedule: 'scheduled',
+      schedul: 'scheduled',
+      schedu: 'scheduled',
+      sched: 'scheduled',
+      sche: 'scheduled',
+      sch: 'scheduled',
+      sc: 'scheduled',
     }
 
     modifier = modifier.toLowerCase()
@@ -591,6 +663,53 @@ var init = function (controller) {
     }
   }
 
+  function resolveStatus(prio) {
+    var result = 'pending';
+    var prios = {
+      pending: 'pending',
+      pendin: 'pending',
+      pendi: 'pending',
+      pend: 'pending',
+      pen: 'pending',
+      pe: 'pending',
+      p: 'pending',
+      completed: 'completed',
+      complete: 'completed',
+      complet: 'completed',
+      comple: 'completed',
+      compl: 'completed',
+      comp: 'completed',
+      com: 'completed',
+      co: 'completed',
+      c: 'completed',
+      waiting: 'waiting',
+      waitin: 'waiting',
+      waiti: 'waiting',
+      wait: 'waiting',
+      wai: 'waiting',
+      wa: 'waiting',
+      w: 'waiting',
+      deleted: 'deleted',
+      delete: 'deleted',
+      delet: 'deleted',
+      dele: 'deleted',
+      del: 'deleted',
+      de: 'deleted',
+      d: 'deleted',
+    }
+
+    prio = prio.toLowerCase()
+    if (prios[prio]) {
+      result = prios[prio]
+    }
+    
+    return prio
+  }
+
+
+  // status  One of ‘pending’, ‘completed’, ‘waiting’, or ‘deleted’. New tasks default to ‘pending’.
+
+
   // parse the user's command and add a task using the inthe.am API
   function addTask(bot, message, text) {
     // add a reaction so the user knows we're working on it
@@ -606,25 +725,22 @@ var init = function (controller) {
       settings.body = task;
 
       // call the inthe.am API to add the new task
-      request(settings, function (err, response, body) {
+      apiRequest(bot, message, settings, function (err, response, body) {
         // remove the reaction again
         removeReaction(bot, message, 'thinking_face')
-        if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-          bot.botkit.log('added task for ' + message.user);
-          var priority;
-          if (task.priority == 'L') {
-            priority = 'low" :blue_book:';
-          } else if (task.priority == 'M') {
-            priority = 'medium" :notebook_with_decorative_cover:'
-          } else {
-            priority = 'high" :closed_book:'
-          }
-          var answerText = 'Alright, I\'ve added task '+ body.short_id + ' to the list with priority "' + priority
-          bot.reply(message, {text: answerText})
+       
+        bot.botkit.log('added task for ' + message.user);
+        var priority;
+        if (task.priority == 'L') {
+          priority = 'low" :blue_book:';
+        } else if (task.priority == 'M') {
+          priority = 'medium" :notebook_with_decorative_cover:'
         } else {
-          bot.botkit.log('error adding task for ' + message.user, err);
-          bot.reply(message, 'I\'m sorry, but there was a problem adding that task to your task list :confused:')
+          priority = 'high" :closed_book:'
         }
+        var answerText = 'Alright, I\'ve added task '+ body.short_id + ' to the list with priority "' + priority
+        bot.reply(message, {text: answerText})
+     
       })      
     });
   }
@@ -633,11 +749,11 @@ var init = function (controller) {
   function modifyTask(bot, message, short_id, text) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')
-    bot.botkit.log('text', text)
+    
     var tokens = text.split(' ')
     tokens.splice(0,2)
     text = tokens.join(' ')
-    bot.botkit.log('text', text)
+    
 
     // get a list of all pending tasks
     getTasks(bot, message, message.user, function (err, response, body) {
@@ -653,8 +769,6 @@ var init = function (controller) {
             // create a task object from old task and the user input 
             var newTask = cl2task(text, task)
 
-            bot.botkit.log('newTask', newTask)
-
             // get the token for the user 
             getIntheamToken(bot, message, message.user, function (token) {
               var settings = prepareAPI('tasks/' + task.id, 'PUT', token);
@@ -662,29 +776,20 @@ var init = function (controller) {
               settings.body = newTask;
 
               // call the inthe.am API to add the new task
-              request(settings, function (err, response, body) {
+              apiRequest(bot, message, settings, function (err, response, body) {
                 // remove the reaction again
                 removeReaction(bot, message, 'thinking_face')
-                if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-                  bot.botkit.log('changed task for ' + message.user);
-                  // bot.botkit.log('', response);
 
-                 
-                  var answerText = 'Alright, I\'ve changed task '+ body.short_id + ' for you.'
-                  bot.reply(message, {text: answerText})
-                } else {
-                  bot.botkit.log('error modifying task for ' + message.user, err);
-                  bot.reply(message, 'I\'m sorry, but there was a problem changing that task :confused:')
-                }
+                bot.botkit.log('changed task for ' + message.user);
+               
+                var answerText = 'Alright, I\'ve changed task '+ body.short_id + ' for you.'
+                bot.reply(message, {text: answerText})
               })      
             });
           }
         }
       }
     })
-
-
-
   }
 
   // mark as task as completed using the inthe.am API
@@ -694,68 +799,49 @@ var init = function (controller) {
 
     // get a list of all pending tasks
     getTasks(bot, message, message.user, function (err, response, body) {
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        var tasks = response.body;
-        // sort them by urgency
-        tasks.sort(compareTasks);
-        // the highest urgency of all pending tasks in the list
-        var highestUrgency = 0;
-        // the urgency of the completed task
-        var completedUrgency = -1; 
-        // loop over all tasks...
-        for (var i = 0; i < tasks.length; i++) {
-          var task = tasks[i];
-          // remember the max urgency
-          if (task.urgency > highestUrgency) {
-            highestUrgency = task.urgency;
-          }
-          // if this is the completed task
-          if (task.short_id == short_id) {
-            // remember the urgency of the completed task
-            completedUrgency = task.urgency;
-
-            getIntheamToken(bot, message, message.user, function (token) {
-              var settings = prepareAPI('tasks/' + task.id, 'DELETE', token);
-         
-              // call the inthe.am API and mark the task as complete
-              request(settings, function (err, response, body) {
-                // remove the thinking_face reaction again
-                removeReaction(bot, message, 'thinking_face')
-                if (!err) {
-                  if (body.detail == 'Invalid token.') {
-                    bot.botkit.log('invalid token ' + token + ' for user ' + message.user);
-                    var answer = {channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true}  
-                    bot.api.chat.postMessage(answer, function (err, response) {
-                      if (!err) {
-                        addReaction(bot, response, 'computer')
-                      }
-                    })
-                  } else {
-                    bot.botkit.log('marked task ' + short_id + ' for user ' + message.user + ' as complete');
-                    var answerText = 'Ok, task ' + short_id + ' has been marked as complete - well done!'
-                    if (tasks.length -1 == 0) {
-                      asnwerText = answerText + ' That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:'
-                    } else {
-                      asnwerText = answerText + ' One done, ' + (tasks.length -1) + ' to go :clap:'
-                    }
-                    bot.reply(message, answerText)
-                    // if the completed task was not the one with the highest urgency
-                    if (completedUrgency < highestUrgency) {
-                      bot.reply(message, randomMessage(NOT_MOST_URGENT_MESSAGES))
-                    }
-
-                  }
-                } else {
-                  bot.reply(message, 'I\m sorry, I was unable to complete task ' + short_id + '. I bet you\'ve already completed it!');
-                  bot.botkit.log('error completing task ' + short_id , err);
-                }
-              })
-            });
-          }
+      
+      var tasks = response.body;
+      // sort them by urgency
+      tasks.sort(compareTasks);
+      // the highest urgency of all pending tasks in the list
+      var highestUrgency = 0;
+      // the urgency of the completed task
+      var completedUrgency = -1; 
+      // loop over all tasks...
+      for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
+        // remember the max urgency
+        if (task.urgency > highestUrgency) {
+          highestUrgency = task.urgency;
         }
-      } else {
-        bot.botkit.log('error getting tasks for user ' + message.user)
-        bot.reply(message, 'I\'m sorry, but there was a problem completing that task on your task list :confused:')
+        // if this is the completed task
+        if (task.short_id == short_id) {
+          // remember the urgency of the completed task
+          completedUrgency = task.urgency;
+
+          getIntheamToken(bot, message, message.user, function (token) {
+            var settings = prepareAPI('tasks/' + task.id, 'DELETE', token);
+       
+            // call the inthe.am API and mark the task as complete
+            apiRequest(bot, message, settings, function (err, response, body) {
+              // remove the thinking_face reaction again
+              removeReaction(bot, message, 'thinking_face')
+        
+              bot.botkit.log('marked task ' + short_id + ' for user ' + message.user + ' as complete');
+              var answerText = 'Ok, task ' + short_id + ' has been marked as complete - well done!'
+              if (tasks.length -1 == 0) {
+                asnwerText = answerText + ' That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:'
+              } else {
+                asnwerText = answerText + ' One done, ' + (tasks.length -1) + ' to go :clap:'
+              }
+              bot.reply(message, answerText)
+              // if the completed task was not the one with the highest urgency
+              if (completedUrgency < highestUrgency) {
+                bot.reply(message, randomMessage(NOT_MOST_URGENT_MESSAGES))
+              }
+            })
+          });
+        }
       }
     })
   }
@@ -787,57 +873,38 @@ var init = function (controller) {
 
     // get a list of all pending tasks
     getTasks(bot, message, message.user, function (err, response, body) {
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        var tasks = response.body;
-        // loop over all tasks...
-        for (var i = 0; i < tasks.length; i++) {
-          var task = tasks[i];
+      
+      var tasks = response.body;
+      // loop over all tasks...
+      for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
 
-          // if this is the task to start/stop
-          if (task.short_id == short_id) {
+        // if this is the task to start/stop
+        if (task.short_id == short_id) {
 
-            getIntheamToken(bot, message, message.user, function (token) {
-              var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
-         
-              // call the inthe.am API and mark the task as started or stopped
-              request(settings, function (err, response, body) {
-                // remove the thinking_face reaction again
-                removeReaction(bot, message, 'thinking_face')
-                if (!err) {
-                  if (body && body.detail == 'Invalid token.') {
-                    bot.botkit.log('invalid token ' + token + ' for user ' + message.user);
-                    var answer = {channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true}  
-                    bot.api.chat.postMessage(answer, function (err, response) {
-                      if (!err) {
-                        addReaction(bot, response, 'computer')
-                      }
-                    })
-                  } else {
-                    bot.botkit.log(mode + 'ed task ' + short_id + ' for user ' + message.user);
-                    var answerText = 'Ok, I have '
-                    if (mode === 'start') {
-                      answerText = answerText + 'started '
-                    } else {
-                      answerText = answerText + 'stopped '
-                    }
-                    answerText = answerText + 'the timer for task ' + short_id + ' for you. :stopwatch:';
+          getIntheamToken(bot, message, message.user, function (token) {
+            var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
+       
+            // call the inthe.am API and mark the task as started or stopped
+            apiRequest(bot, message, settings, function (err, response, body) {
+              // remove the thinking_face reaction again
+              removeReaction(bot, message, 'thinking_face')
+             
+              bot.botkit.log(mode + 'ed task ' + short_id + ' for user ' + message.user);
+              var answerText = 'Ok, I have '
+              if (mode === 'start') {
+                answerText = answerText + 'started '
+              } else {
+                answerText = answerText + 'stopped '
+              }
+              answerText = answerText + 'the timer for task ' + short_id + ' for you. :stopwatch:';
 
-                    bot.reply(message, answerText)
-                  }
-                } else {
-                  bot.reply(message, 'I\m sorry, I was unable to complete task ' + short_id + '. I bet you\'ve already completed it!');
-                  bot.botkit.log('error completing task ' + short_id , err);
-                }
-              })
-            });
-          }
+              bot.reply(message, answerText)
+            })
+          });
         }
-      } else {
-        // remove the thinking_face reaction again
-        removeReaction(bot, message, 'thinking_face')
-        bot.botkit.log('error getting tasks for user ' + message.user)
-        bot.reply(message, 'I\'m sorry, but there was a problem completing that task on your task list :confused:')
       }
+  
     })
   }
 

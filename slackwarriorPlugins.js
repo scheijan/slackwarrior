@@ -270,11 +270,9 @@ var init = function (controller) {
   function getIntheamToken(bot, message, userID, cb) {
     controller.storage.users.get(userID, function(err, user) {
       if (!err && user && user.token && user.token.length > 0) {
-      
-          var token = user.token;
-          bot.botkit.log('found user token in local storage', token)
-          cb(token)
-        
+        var token = user.token;
+        bot.botkit.log('found user token in local storage', token)
+        cb(token)
       } else {
         bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your tasks. Please feel free to ask me for `help` any time. :robot_face:')
         bot.botkit.log('error getting user or user token from storage', err)
@@ -333,11 +331,30 @@ var init = function (controller) {
   }
 
   // call the inthe.am API to get a list of all tasks
-  function getTasks(bot, message, user, cb) {
+  function getTasks(bot, message, user, short_id, cb) {
     getIntheamToken(bot, message, user, function (token) {
       var settings = prepareAPI('tasks', 'GET', token);
       // call the API pass the callback function on
-      apiRequest(bot, message, settings, cb);
+      apiRequest(bot, message, settings, function (err, response, body) {
+        if (short_id) {
+          var found = false;
+          for (var i = 0; i < body.length; i++) {
+            var task = body[i]
+            if (task.short_id == short_id) {
+              found = true;
+            }
+          }
+          if (found) {
+            cb(err, response, body)
+          } else {
+            bot.botkit.log('no error, but problem getting task details for task ' + short_id + ' for user ' + message.user)
+            removeReaction(bot, message, 'thinking_face')
+            bot.reply(message, 'I\'m sorry, but there was a problem getting that task on your task list - maybe you have already completed it or it\'s not a `pending` task :confused:')
+          }
+        } else {
+          cb(err, response, body)
+        }
+      });
     })
   }
 
@@ -348,12 +365,12 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // get a list of all tasks
-    getTasks(bot, message, message.user, function (err, response, body) {
+    getTasks(bot, message, message.user, false, function (err, response, body) {
       // remove the thinking face again
       removeReaction(bot, message, 'thinking_face')
       
       // sort list of tasks by urgency
-      var tasks = response.body;
+      var tasks = body;
 
       if (tasks && tasks.length && tasks.length > 0) {
         tasks.sort(compareTasks);
@@ -422,12 +439,12 @@ var init = function (controller) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')
 
-    getTasks(bot, message, message.user, function (err, response, body) {
+    getTasks(bot, message, message.user, false, function (err, response, body) {
       // remove the thinking face again
       removeReaction(bot, message, 'thinking_face')
       
       // sort list of tasks by urgency
-      var tasks = response.body;
+      var tasks = body;
       if (tasks && tasks.length && tasks.length > 0) {
         tasks.sort(compareTasks);
         var l = tasks.length;
@@ -477,7 +494,7 @@ var init = function (controller) {
         answer['attachments'] = attachments;
         bot.api.chat.postMessage(answer, function (err, response) {
           if (!err) {
-            bot.botkit.log('tasks sent');
+            // bot.botkit.log('tasks sent');
           } else {
             bot.botkit.log('error sending tasks', response, err);     
           }
@@ -489,7 +506,7 @@ var init = function (controller) {
     })
   }
 
-  function cl2task(bot, message, commandLine, oldTask) {
+  function cl2task(bot, message, commandLine, oldTask, annotation) {
     // initialize a task object with default priority = 'L'
     var result = {
       description: '',
@@ -501,6 +518,10 @@ var init = function (controller) {
       result = oldTask;
     }
 
+    if (!result.tags) {
+      result.tags = []
+    }
+
     commandLine = commandLine.replace(REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED,'__|__')
     
     var tokens = commandLine.split('__|__')
@@ -509,9 +530,7 @@ var init = function (controller) {
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i];
       // if it was a modifier
-      bot.botkit.log('token', token)
       token = token.replace(REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED,'__|__')
-      bot.botkit.log('token', token)
       if (token.indexOf('__|__') > -1) {
         var orgKey = token.split('__|__')[0];
         var key = token.split('__|__')[0];
@@ -560,8 +579,15 @@ var init = function (controller) {
       }
     }
 
-    if (descriptionParts.length > 0) {
+    if (descriptionParts.length > 0 && !annotation) {
       result.description = descriptionParts.join(' ').trim()
+    }
+
+    if (annotation) {
+      if (!result.annotations) {
+        result.annotations = []
+      }
+      result.annotations.push(descriptionParts.join(' ').trim())
     }
 
     return result;
@@ -670,10 +696,6 @@ var init = function (controller) {
     return prio
   }
 
-
-  // status  One of ‘pending’, ‘completed’, ‘waiting’, or ‘deleted’. New tasks default to ‘pending’.
-
-
   // parse the user's command and add a task using the inthe.am API
   function addTask(bot, message, text) {
     // add a reaction so the user knows we're working on it
@@ -721,7 +743,7 @@ var init = function (controller) {
   }
 
   // parse the user's command and add a task using the inthe.am API
-  function modifyTask(bot, message, short_id, text) {
+  function modifyTask(bot, message, short_id, text, annotate) {
     // add a reaction so the user knows we're working on it
     addReaction(bot, message, 'thinking_face')
     
@@ -731,9 +753,7 @@ var init = function (controller) {
     
 
     // get a list of all pending tasks
-    getTasks(bot, message, message.user, function (err, response, body) {
-
-      var tasks = response.body;
+    getTasks(bot, message, message.user, short_id, function (err, response, tasks) {
       // loop over all tasks...
       for (var i = 0; i < tasks.length; i++) {
         var task = tasks[i];
@@ -742,7 +762,7 @@ var init = function (controller) {
         if (task.short_id == short_id) {
 
           // create a task object from old task and the user input 
-          var newTask = cl2task(bot, message, text, task)
+          var newTask = cl2task(bot, message, text, task, annotate)
 
           // get the token for the user 
           getIntheamToken(bot, message, message.user, function (token) {
@@ -773,9 +793,7 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // get a list of all pending tasks
-    getTasks(bot, message, message.user, function (err, response, body) {
-      
-      var tasks = response.body;
+    getTasks(bot, message, message.user, short_id, function (err, response, tasks) {
       // sort them by urgency
       tasks.sort(compareTasks);
       // the highest urgency of all pending tasks in the list
@@ -836,6 +854,8 @@ var init = function (controller) {
       startStopTask(bot, message, short_id, 'stop')
     } else if (command === 'modify') {
       modifyTask(bot, message, short_id, text)
+    } else if (command === 'annotate') {
+      modifyTask(bot, message, short_id, text, true)      
     } else {
       bot.reply(message, 'I\'m sorry, but I don\'t know how to execute the command `' + command + '`, right now I only know `done`.')
     }
@@ -847,9 +867,7 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // get a list of all pending tasks
-    getTasks(bot, message, message.user, function (err, response, body) {
-      
-      var tasks = response.body;
+    getTasks(bot, message, message.user, short_id, function (err, response, tasks) {
       // loop over all tasks...
       for (var i = 0; i < tasks.length; i++) {
         var task = tasks[i];
@@ -889,18 +907,16 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // get a list of all pending tasks
-    getTasks(bot, message, message.user, function (err, response, body) {
-      var found = false;
+    getTasks(bot, message, message.user, short_id, function (err, response, tasks) {
+      
       // remove the thinking_face reaction again
       removeReaction(bot, message, 'thinking_face')
-
-      var tasks = response.body;
       // loop over all tasks...
       for (var i = 0; i < tasks.length; i++) {
         var task = tasks[i];
         // if this is the task we're looking for
         if (task.short_id == short_id) {
-          found = true;
+          
           bot.botkit.log('in details', short_id)
           // basic settings for the result message
           var answer = {
@@ -1001,9 +1017,9 @@ var init = function (controller) {
           if (task.annotations && task.annotations.length && task.annotations.length > 0) {
             text = text + 'Annotations' + '\n'
 
-            for (var i = 0; i < task.annotations.length; i++) {
+            for (var j = 0; j < task.annotations.length; j++) {
              
-              var annotation = task.annotations[i];
+              var annotation = task.annotations[j];
               text = text + ' - ' + annotation + '\n'
 
             }
@@ -1020,11 +1036,6 @@ var init = function (controller) {
             }
           })
         }
-      }
-     
-      if (!err && !found) {
-        bot.botkit.log('no error, but problem getting task details for user ' + message.user)
-        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list - maybe you have already completed it or it is not a `pending` task :confused:')
       }
     })
   }

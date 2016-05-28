@@ -7,7 +7,10 @@ Promise.promisifyAll(require("request"));
 // general error messages
 var GENERAL_ERROR_MESSAGES = ['I\'m sorry, but there was an internal problem, it\'s probably the old hydraulic pump again. Please try again later, it should be less squeaky once it\'s cooled down a little...']
 var TASK_ERROR_MESSAGES = ['I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.']
-var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:','Looks like you should have been working on something else though... :alarm_clock:']
+var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:',
+                                'Looks like you should have been working on something else though... :building_construction:',
+                                'But aren\'t you running out of time for some other tasks on your list :hourglass_flowing_sand:',
+                                'The clock seems to be ticking for some other tasks on your list though... :alarm_clock:']
 
 var REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
 var REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/
@@ -823,9 +826,9 @@ var init = function (controller) {
               bot.botkit.log('marked task ' + short_id + ' for user ' + message.user + ' as complete');
               var answerText = 'Ok, task ' + short_id + ' has been marked as complete - well done!'
               if (tasks.length -1 == 0) {
-                asnwerText = answerText + ' That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:'
+                answerText = answerText + ' That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:'
               } else {
-                asnwerText = answerText + ' One done, ' + (tasks.length -1) + ' to go :clap:'
+                answerText = answerText + ' One done, ' + (tasks.length -1) + ' to go :clap:'
               }
               bot.reply(message, answerText)
               // if the completed task was not the one with the highest urgency

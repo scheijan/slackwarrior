@@ -9,9 +9,11 @@
   "author": "scheijan",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.4.0",
     "botkit": "0.1.1",
     "cheerio": "^0.20.0",
     "date.js": "^0.3.1",
     "moment": "^2.13.0",
+    "request": "^2.72.0"
   }
 }

@@ -1,6 +1,6 @@
-var orgDateFormat = require('dateformat');
 var request = require('request');
 var datejs = require('date.js');
+var moment = require('moment');
 var Promise = require('bluebird');
 Promise.promisifyAll(require("request"));
 
@@ -35,54 +35,6 @@ String.prototype.padLeft = function(l, c) {
     while (str.length < l)
         str = c + str;
     return str;
-}
-
-// convert a timestamp to a human readable format
-function dateFormat(d) {
-  return orgDateFormat(d, "yyyy-mm-dd hh:MM");
-}
-
-// get the delta between two timestamps in a short human readable format
-function getTimeDiff( datetime ) {
-  var datetime = typeof datetime !== 'undefined' ? datetime : "2016-01-01 01:02:03.123456";
-
-  var datetime = new Date( datetime ).getTime();
-  var now = new Date().getTime();
-
-  if( isNaN(datetime) )
-  {
-      return "";
-  }
-
-  if (datetime < now) {
-    var milisec_diff = now - datetime;
-  } else {
-    var milisec_diff = datetime - now;
-  }
-
-  var days = Math.floor(milisec_diff / 1000 / 60 / (60 * 24));
-
-  var date_diff = new Date( milisec_diff );
-
-  var hours = date_diff.getHours() - 1;
-  var minutes = date_diff.getMinutes();
-
-  var result = '';
-  if (days > 0) {
-    result = days + 'd'
-  } else if (hours > 0) {
-    result = hours + 'h'
-  } else if (minutes > 0) {
-    result = minutes + 'm'
-  } else {
-    result = date_diff.getSeconds() + 's'
-  }
-
-  if (datetime < now) {
-    return result;
-  } else {
-    return '-' + result;
-  }
 }
 
 // shuffle an array and return it
@@ -300,14 +252,14 @@ var init = function (controller) {
     }
 
     // format entry- and modified-date
-    var entry = new Date(task.entry);
-    var entryDiff = getTimeDiff(entry);
-    entry = dateFormat(entry);
+    var entry = moment(task.entry);
+    var entryDiff = entry.fromNow()
+    
 
-    var modified = new Date(task.modified);
-    var modifiedDiff = getTimeDiff(modified);
-    modified = dateFormat(modified);
-    var text = 'Created: ' + entry + ' (' + entryDiff + ') / Modified: ' + modified + ' (' + modifiedDiff + ')';
+    var modified = moment(task.modified);
+    var modifiedDiff = modified.fromNow()
+    
+    var text = 'Created: ' + entry.format('ll') + ' (' + entryDiff + ') / Modified: ' + modified.format('ll') + ' (' + modifiedDiff + ')';
 
     attachment.text = text;
 
@@ -961,39 +913,39 @@ var init = function (controller) {
           }
 
           // format entry-, start- and modified-date and the deltas
-          var entry = new Date(task.entry);
-          var entryDiff = getTimeDiff(entry);
-          entry = dateFormat(entry);
-          var modified = new Date(task.modified);
-          var modifiedDiff = getTimeDiff(modified);
-          modified = dateFormat(modified);
+          var entry = moment(task.entry);
+          var entryDiff = entry.fromNow();
+          entry = entry.format('llll')
+          var modified = moment(task.modified);
+          var modifiedDiff = modified.fromNow()
+          modified = modified.format('llll')
           var start;
           var startDiff = '';
           if (task.start) {
-            start = new Date(task.start);
-            start = dateFormat(start);
-            startDiff = getTimeDiff(start);
+            start = moment(task.start);
+            startDiff = start.fromNow()
+            start = start.format('llll')
           }
           var due;
           var dueDiff = '';
           if (task.due) {
-            due = new Date(task.due);
-            due = dateFormat(due);
-            dueDiff = getTimeDiff(due);
+            due = moment(task.due);
+            dueDiff = due.fromNow()
+            due = due.format('llll')
           }
           var wait;
           var waitDiff = '';
           if (task.wait) {
-            wait = new Date(task.wait);
-            wait = dateFormat(wait);
-            waitDiff = getTimeDiff(wait);
+            wait = moment(task.wait);
+            waitDiff = wait.fromNow()
+            wait = wait.format('llll')
           }
           var scheduled;
           var scheduledDiff = '';
           if (task.scheduled) {
-            scheduled = new Date(task.scheduled);
-            scheduled = dateFormat(scheduled);
-            scheduledDiff = getTimeDiff(scheduled);
+            scheduled = moment(task.scheduled);
+            scheduledDiff = scheduled.fromNow()
+            scheduled = scheduled.format('llll')
           }
           
           attachment.title = 'Details for task <https://inthe.am/tasks/' + task.id + '|' + task.short_id + '>'

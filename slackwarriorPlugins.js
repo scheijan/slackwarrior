@@ -1,5 +1,6 @@
 var orgDateFormat = require('dateformat');
 var request = require('request');
+var datejs = require('date.js');
 var Promise = require('bluebird');
 Promise.promisifyAll(require("request"));
 
@@ -398,72 +399,68 @@ var init = function (controller) {
     getTasks(bot, message, message.user, function (err, response, body) {
       // remove the thinking face again
       removeReaction(bot, message, 'thinking_face')
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        // sort list of tasks by urgency
-        var tasks = response.body;
-
-        if (tasks && tasks.length && tasks.length > 0) {
-          tasks.sort(compareTasks);
-          var l = tasks.length;
-          bot.botkit.log('got ' + l + ' tasks for user', message.user);
-
-          // add some headers to the snippet
-          var result = [' ID  Prio  Project     Description',''];
-          // add one line in the snippet for every pending task
-          for (var i = 0; i < l; i++) {
-            var task = tasks[i];
-            // format short_id to a length of three
-            var short_id = '' + task.short_id;
-            short_id = short_id.padLeft(3, ' ')
-
-            var priority = ' ';
-            if (task.priority) {
-              priority = task.priority;
-            }
-            priority = priority.padRight(4, ' ')
-
-            var project = ' ';
-            if (task.project) {
-              project = '' + task.project
-            }
-            project = project.padRight(11, ' ')
-            // concat the values with some spaces 
-            var line = short_id + '  ' + priority + '  ' + project + ' ' + task.description
-            if (task.start) {
-              line = line + ' (active)'
-            }
-           
-            result.push(line)
-          }
-
-          result = result.join('\n')
-
-          var d = new Date();
-          var date = d.toLocaleString();
-
-          // upload the resulting snippet
-          bot.api.files.upload({
-            content: result,
-            channels: message.channel,
-            title: 'Tasks on ' + date
-            }, function (err, res) {
-            // bot.botkit.log('res', res);
-              if (err) {
-                bot.botkit.log('err uploading tasks snippet', err);
-                bot.reply(message, 'There was some problem uploading the tasks file')
-                bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
-              } else {
-                bot.reply(message, 'These are your ' + l + ' pending tasks, sorted by urgency :notebook:')
-              }
-          })
-        } else {
-          bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
-        }
-      } else {
-        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
-        bot.botkit.log('error getting all taks for user ' + message.user)
-      }
       
+      // sort list of tasks by urgency
+      var tasks = response.body;
+
+      if (tasks && tasks.length && tasks.length > 0) {
+        tasks.sort(compareTasks);
+        var l = tasks.length;
+        bot.botkit.log('got ' + l + ' tasks for user', message.user);
+
+        // add some headers to the snippet
+        var result = [' ID  Prio  Project     Description',''];
+        // add one line in the snippet for every pending task
+        for (var i = 0; i < l; i++) {
+          var task = tasks[i];
+          // format short_id to a length of three
+          var short_id = '' + task.short_id;
+          short_id = short_id.padLeft(3, ' ')
+
+          var priority = ' ';
+          if (task.priority) {
+            priority = task.priority;
+          }
+          priority = priority.padRight(4, ' ')
+
+          var project = ' ';
+          if (task.project) {
+            project = '' + task.project
+          }
+          project = project.padRight(11, ' ')
+          // concat the values with some spaces 
+          var line = short_id + '  ' + priority + '  ' + project + ' ' + task.description
+          if (task.start) {
+            line = line + ' (active)'
+          }
+         
+          result.push(line)
+        }
+
+        result = result.join('\n')
+
+        var d = new Date();
+        var date = d.toLocaleString();
+
+        // upload the resulting snippet
+        bot.api.files.upload({
+          content: result,
+          channels: message.channel,
+          title: 'Tasks on ' + date
+          }, function (err, res) {
+          // bot.botkit.log('res', res);
+            if (err) {
+              bot.botkit.log('err uploading tasks snippet', err);
+              bot.reply(message, 'There was some problem uploading the tasks file')
+              bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
+            } else {
+              bot.reply(message, 'These are your ' + l + ' pending tasks, sorted by urgency :notebook:')
+            }
+        })
+      } else {
+        bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
+      }
+    
     })
   }
 
@@ -476,73 +473,66 @@ var init = function (controller) {
     getTasks(bot, message, message.user, function (err, response, body) {
       // remove the thinking face again
       removeReaction(bot, message, 'thinking_face')
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        // sort list of tasks by urgency
-        var tasks = response.body;
-        if (tasks && tasks.length && tasks.length > 0) {
-          tasks.sort(compareTasks);
-          var l = tasks.length;
-          bot.botkit.log('got ' + l + ' tasks for user ', message.user);
-          
-          //
-          var pretext = ':notebook: You have ' + tasks.length + ' pending tasks right now';
-          if (l >= 2) {
-            pretext = pretext + ', here are the top 3: '
-          } else {
-            pretext = pretext + ':'
-          }
-          
-          // basic settings for the result message
-          var answer = {
-              channel: message.channel,
-              as_user: true,
-          }
-          
-          // limit tasks to 3
-          var maxTasks = l;
-          if (l >= 2) {
-            maxTasks = 2;
-          }
-
-          if (l < 3) {
-            maxTasks = l -1;
-          }
-       
-          // create a list of attachments, one per task
-          var attachments = [];
-          for (var i = 0; i <= maxTasks; i++) {
-            var task = tasks[i];
-
-            // create a message attachment from this task
-            var attachment = task2attachement(task);
-
-            // if this is the very first attachment we set the pretext
-            if (i === 0) {
-              attachment['pretext'] = pretext;
-            }
-
-            attachments.push(attachment);
-          }
-
-          // add attachments to the message and send it
-          answer['attachments'] = attachments;
-          bot.api.chat.postMessage(answer, function (err, response) {
-            if (!err) {
-              bot.botkit.log('tasks sent');
-            } else {
-              bot.botkit.log('error sending tasks', response, err);     
-            }
-            
-          })
+      
+      // sort list of tasks by urgency
+      var tasks = response.body;
+      if (tasks && tasks.length && tasks.length > 0) {
+        tasks.sort(compareTasks);
+        var l = tasks.length;
+        bot.botkit.log('got ' + l + ' tasks for user ', message.user);
+        
+        //
+        var pretext = ':notebook: You have ' + tasks.length + ' pending tasks right now';
+        if (l >= 2) {
+          pretext = pretext + ', here are the top 3: '
         } else {
-          bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
+          pretext = pretext + ':'
+        }
+        
+        // basic settings for the result message
+        var answer = {
+            channel: message.channel,
+            as_user: true,
+        }
+        
+        // limit tasks to 3
+        var maxTasks = l;
+        if (l >= 2) {
+          maxTasks = 2;
         }
 
+        if (l < 3) {
+          maxTasks = l -1;
+        }
+     
+        // create a list of attachments, one per task
+        var attachments = [];
+        for (var i = 0; i <= maxTasks; i++) {
+          var task = tasks[i];
 
+          // create a message attachment from this task
+          var attachment = task2attachement(task);
+
+          // if this is the very first attachment we set the pretext
+          if (i === 0) {
+            attachment['pretext'] = pretext;
+          }
+
+          attachments.push(attachment);
+        }
+
+        // add attachments to the message and send it
+        answer['attachments'] = attachments;
+        bot.api.chat.postMessage(answer, function (err, response) {
+          if (!err) {
+            bot.botkit.log('tasks sent');
+          } else {
+            bot.botkit.log('error sending tasks', response, err);     
+          }
+          
+        })
       } else {
-        bot.botkit.log('something went wrong getting tasks for ' + message.user, err);
-        // remove the thinking face again
-        bot.reply(message, randomMessage(GENERAL_ERROR_MESSAGES))
+        bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
       }
     })
   }
@@ -593,6 +583,8 @@ var init = function (controller) {
         // in case of date values we can't just split on the ":"
         } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
           bot.botkit.log('XXXXXXXXXX', key)
+          bot.botkit.log('XXXXXXXXXX', value)
+          value = datejs(value)
           bot.botkit.log('XXXXXXXXXX', value)
           result[key] = value;
         } else {
@@ -748,7 +740,6 @@ var init = function (controller) {
       settings.body = task;
 
       // call the inthe.am API to add the new task
-      bot.botkit.log('settings', settings)
       apiRequest(bot, message, settings, function (err, response, body) {
         // remove the reaction again
         removeReaction(bot, message, 'thinking_face')
@@ -781,38 +772,38 @@ var init = function (controller) {
 
     // get a list of all pending tasks
     getTasks(bot, message, message.user, function (err, response, body) {
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        var tasks = response.body;
-        // loop over all tasks...
-        for (var i = 0; i < tasks.length; i++) {
-          var task = tasks[i];
 
-          // if this is the task to start/stop
-          if (task.short_id == short_id) {
+      var tasks = response.body;
+      // loop over all tasks...
+      for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
 
-            // create a task object from old task and the user input 
-            var newTask = cl2task(bot, message, text, task)
+        // if this is the task to start/stop
+        if (task.short_id == short_id) {
 
-            // get the token for the user 
-            getIntheamToken(bot, message, message.user, function (token) {
-              var settings = prepareAPI('tasks/' + task.id, 'PUT', token);
+          // create a task object from old task and the user input 
+          var newTask = cl2task(bot, message, text, task)
 
-              settings.body = newTask;
+          // get the token for the user 
+          getIntheamToken(bot, message, message.user, function (token) {
+            var settings = prepareAPI('tasks/' + task.id, 'PUT', token);
 
-              // call the inthe.am API to add the new task
-              apiRequest(bot, message, settings, function (err, response, body) {
-                // remove the reaction again
-                removeReaction(bot, message, 'thinking_face')
+            settings.body = newTask;
 
-                bot.botkit.log('changed task for ' + message.user);
-               
-                var answerText = 'Alright, I\'ve changed task '+ body.short_id + ' for you.'
-                bot.reply(message, {text: answerText})
-              })      
-            });
-          }
+            // call the inthe.am API to add the new task
+            apiRequest(bot, message, settings, function (err, response, body) {
+              // remove the reaction again
+              removeReaction(bot, message, 'thinking_face')
+
+              bot.botkit.log('changed task for ' + message.user);
+             
+              var answerText = 'Alright, I\'ve changed task '+ body.short_id + ' for you.'
+              bot.reply(message, {text: answerText})
+            })      
+          });
         }
       }
+      
     })
   }
 

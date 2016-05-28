@@ -12,7 +12,6 @@
     "botkit": "0.1.1",
     "cheerio": "^0.20.0",
     "date.js": "^0.3.1",
-    "dateformat": "^1.0.12",
     "moment": "^2.13.0",
     "request-promise": "^3.0.0"
   }

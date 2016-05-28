@@ -9,7 +9,7 @@ var TASK_ERROR_MESSAGES = ['I\'m sorry, but I didn\'t understand that command. P
 var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:','Looks like you should have been working on something else though... :alarm_clock:']
 
 var REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
-var REGEX_ALL_COLONS_THAT_ARE_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/g
+var REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/
 
 function randomMessage(messages) {
   var randomMessages = shuffle(messages)
@@ -567,7 +567,9 @@ var init = function (controller) {
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i];
       // if it was a modifier
-      token = token.replace(REGEX_ALL_COLONS_THAT_ARE_NOT_QUOTED,'__|__')
+      bot.botkit.log('token', token)
+      token = token.replace(REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED,'__|__')
+      bot.botkit.log('token', token)
       if (token.indexOf('__|__') > -1) {
         var orgKey = token.split('__|__')[0];
         var key = token.split('__|__')[0];
@@ -590,7 +592,8 @@ var init = function (controller) {
           descriptionParts.push(value)
         // in case of date values we can't just split on the ":"
         } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
-          value = token.split(orgKey + ':')[1]
+          bot.botkit.log('XXXXXXXXXX', key)
+          bot.botkit.log('XXXXXXXXXX', value)
           result[key] = value;
         } else {
           result[key] = value;

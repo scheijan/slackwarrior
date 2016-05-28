@@ -711,14 +711,11 @@ var init = function (controller) {
         
         bot.api.chat.postMessage(answer, function (err, response) {
           if (!err) {
-            bot.botkit.log('task details sent');
+            // bot.botkit.log('task details sent');
           } else {
-            bot.botkit.log('error sending task details', response, err);     
+            bot.botkit.log('error sending task added message', response, err);     
           }
         })
-        // XXXX
-        
-     
       })      
     });
   }
@@ -999,6 +996,17 @@ var init = function (controller) {
           text = text + 'Urgency'.padRight(19, ' ') + task.urgency + '\n'
           if (task.priority) {
             text = text + 'Priority'.padRight(19, ' ') + task.priority + '\n'
+          }
+
+          if (task.annotations && task.annotations.length && task.annotations.length > 0) {
+            text = text + 'Annotations' + '\n'
+
+            for (var i = 0; i < task.annotations.length; i++) {
+             
+              var annotation = task.annotations[i];
+              text = text + ' - ' + annotation + '\n'
+
+            }
           }
           attachment.text = text + '```';
 

@@ -74,7 +74,12 @@ function getTimeDiff( datetime ) {
   } else {
     result = date_diff.getSeconds() + 's'
   }
-  return result;
+
+  if (datetime < now) {
+    return result;
+  } else {
+    return '-' + result;
+  }
 }
 
 // shuffle an array and return it
@@ -316,7 +321,7 @@ var init = function (controller) {
           cb(token)
         
       } else {
-        bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your task. Please feel free to ask me for `help` any time. :robot_face:')
+        bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your tasks. Please feel free to ask me for `help` any time. :robot_face:')
         bot.botkit.log('error getting user or user token from storage', err)
       }
     })
@@ -559,6 +564,7 @@ var init = function (controller) {
       var token = tokens[i];
       // if it was a modifier
       if (token.indexOf(':') > -1) {
+        var orgKey = token.split(':')[0];
         var key = token.split(':')[0];
         var value = token.split(':')[1];
         key = resolveModifierShorthand(key);
@@ -572,6 +578,10 @@ var init = function (controller) {
 
         } else if (key === 'description') {
           descriptionParts.push(value)
+        // in case of date values we can't just split on the ":"
+        } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
+          value = token.split(orgKey + ':')[1]
+          result[key] = value;
         } else {
           result[key] = value;
         }
@@ -725,6 +735,7 @@ var init = function (controller) {
       settings.body = task;
 
       // call the inthe.am API to add the new task
+      bot.botkit.log('settings', settings)
       apiRequest(bot, message, settings, function (err, response, body) {
         // remove the reaction again
         removeReaction(bot, message, 'thinking_face')
@@ -919,100 +930,126 @@ var init = function (controller) {
       // remove the thinking_face reaction again
       removeReaction(bot, message, 'thinking_face')
 
-      if (!err && (!body.detail || body.detail != 'Invalid token.')) {
-        var tasks = response.body;
-        // loop over all tasks...
-        for (var i = 0; i < tasks.length; i++) {
-          var task = tasks[i];
-          // if this is the task we're looking for
-          if (task.short_id == short_id) {
-            found = true;
-            bot.botkit.log('in details', short_id)
-            // basic settings for the result message
-            var answer = {
-              channel: message.channel,
-              as_user: true,
-            }
-            var attachment = {
-              "fallback": "this did not work for some reason",
-               "mrkdwn_in": ["text", "pretext"]
-            }
-
-            // set the color according to the priority of the task
-            if (task.priority == 'H') {
-              attachment.color = 'danger'
-            }
-            if (task.priority == 'M') {
-              attachment.color = 'warning'
-            }
-
-            // format entry-, start- and modified-date and the deltas
-            var entry = new Date(task.entry);
-            var entryDiff = getTimeDiff(entry);
-            entry = dateFormat(entry);
-            var modified = new Date(task.modified);
-            var modifiedDiff = getTimeDiff(modified);
-            modified = dateFormat(modified);
-            var start;
-            var startDiff = '';
-            if (task.start) {
-              start = new Date(task.start);
-              start = dateFormat(start);
-              startDiff = getTimeDiff(start);
-            }
-            
-            attachment.title = 'Details for task <https://inthe.am/tasks/' + task.id + '|' + task.short_id + '>'
-            var text = '```';
-            text = text + 'ID'.padRight(19, ' ') + short_id + '\n';
-            var description = 'Description'.padRight(19, ' ') + task.description
-            if (task.start) {
-              description = description + ' (active)'
-            }
-            ;
-            text = text + description + '\n'
-            text = text + 'Status'.padRight(19, ' ') + task.status + '\n'
-            if (task.project) {
-              text = text + 'Project'.padRight(19, ' ') + task.project + '\n'
-            }
-            text = text + 'Entered'.padRight(19, ' ') + entry + ' (' + entryDiff + ')\n'
-            if (start) {
-              text = text + 'Start'.padRight(19, ' ') + start + ' (' + startDiff + ')\n'
-            }
-            text = text + 'Last modified'.padRight(19, ' ') + modified + ' (' + modifiedDiff + ')\n'
-            if (task.tags) {
-              var tags = '';
-              text = text + 'Tags'.padRight(19, ' ')
-              for (var j = 0; j < task.tags.length; j++) {
-                var tag = task.tags[j];
-                tags = tags + tag + ' '
-              }
-              text = text + tags + '\n'
-            }
-            text = text + 'UUID'.padRight(19, ' ') + task.uuid + '\n'
-            text = text + 'Urgency'.padRight(19, ' ') + task.urgency + '\n'
-            if (task.priority) {
-              text = text + 'Priority'.padRight(19, ' ') + task.priority + '\n'
-            }
-            attachment.text = text + '```';
-
-            answer.attachments = [attachment];
-
-            bot.api.chat.postMessage(answer, function (err, response) {
-              if (!err) {
-                bot.botkit.log('task details sent');
-              } else {
-                bot.botkit.log('error sending task details', response, err);     
-              }
-            })
+      var tasks = response.body;
+      // loop over all tasks...
+      for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
+        // if this is the task we're looking for
+        if (task.short_id == short_id) {
+          found = true;
+          bot.botkit.log('in details', short_id)
+          // basic settings for the result message
+          var answer = {
+            channel: message.channel,
+            as_user: true,
           }
+          var attachment = {
+            "fallback": "this did not work for some reason",
+             "mrkdwn_in": ["text", "pretext"]
+          }
+
+          // set the color according to the priority of the task
+          if (task.priority == 'H') {
+            attachment.color = 'danger'
+          }
+          if (task.priority == 'M') {
+            attachment.color = 'warning'
+          }
+
+          // format entry-, start- and modified-date and the deltas
+          var entry = new Date(task.entry);
+          var entryDiff = getTimeDiff(entry);
+          entry = dateFormat(entry);
+          var modified = new Date(task.modified);
+          var modifiedDiff = getTimeDiff(modified);
+          modified = dateFormat(modified);
+          var start;
+          var startDiff = '';
+          if (task.start) {
+            start = new Date(task.start);
+            start = dateFormat(start);
+            startDiff = getTimeDiff(start);
+          }
+          var due;
+          var dueDiff = '';
+          if (task.due) {
+            due = new Date(task.due);
+            due = dateFormat(due);
+            dueDiff = getTimeDiff(due);
+          }
+          var wait;
+          var waitDiff = '';
+          if (task.wait) {
+            wait = new Date(task.wait);
+            wait = dateFormat(wait);
+            waitDiff = getTimeDiff(wait);
+          }
+          var scheduled;
+          var scheduledDiff = '';
+          if (task.scheduled) {
+            scheduled = new Date(task.scheduled);
+            scheduled = dateFormat(scheduled);
+            scheduledDiff = getTimeDiff(scheduled);
+          }
+          
+          attachment.title = 'Details for task <https://inthe.am/tasks/' + task.id + '|' + task.short_id + '>'
+          var text = '```';
+          text = text + 'ID'.padRight(19, ' ') + short_id + '\n';
+          var description = 'Description'.padRight(19, ' ') + task.description
+          if (task.start) {
+            description = description + ' (active)'
+          }
+          
+          text = text + description + '\n'
+          text = text + 'Status'.padRight(19, ' ') + task.status + '\n'
+          if (task.project) {
+            text = text + 'Project'.padRight(19, ' ') + task.project + '\n'
+          }
+          text = text + 'Entered'.padRight(19, ' ') + entry + ' (' + entryDiff + ')\n'
+          if (start) {
+            text = text + 'Start'.padRight(19, ' ') + start + ' (' + startDiff + ')\n'
+          }
+          if (wait) {
+            text = text + 'Wait'.padRight(19, ' ') + wait + ' (' + waitDiff + ')\n'
+          }
+          if (scheduled) {
+            text = text + 'Scheduled'.padRight(19, ' ') + scheduled + ' (' + scheduledDiff + ')\n'
+          }
+          if (due) {
+            text = text + 'Due'.padRight(19, ' ') + due + ' (' + dueDiff + ')\n'
+          }
+          text = text + 'Last modified'.padRight(19, ' ') + modified + ' (' + modifiedDiff + ')\n'
+          if (task.tags) {
+            var tags = '';
+            text = text + 'Tags'.padRight(19, ' ')
+            for (var j = 0; j < task.tags.length; j++) {
+              var tag = task.tags[j];
+              tags = tags + tag + ' '
+            }
+            text = text + tags + '\n'
+          }
+          text = text + 'UUID'.padRight(19, ' ') + task.uuid + '\n'
+          text = text + 'Urgency'.padRight(19, ' ') + task.urgency + '\n'
+          if (task.priority) {
+            text = text + 'Priority'.padRight(19, ' ') + task.priority + '\n'
+          }
+          attachment.text = text + '```';
+
+          answer.attachments = [attachment];
+
+          bot.api.chat.postMessage(answer, function (err, response) {
+            if (!err) {
+              bot.botkit.log('task details sent');
+            } else {
+              bot.botkit.log('error sending task details', response, err);     
+            }
+          })
         }
-      } else {
-        bot.botkit.log('error getting task details for user ' + message.user)
-        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list :confused:')
       }
+     
       if (!err && !found) {
-        bot.botkit.log('error getting task details for user ' + message.user)
-        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list :confused:')
+        bot.botkit.log('no error, but problem getting task details for user ' + message.user)
+        bot.reply(message, 'I\'m sorry, but there was a problem getting details for that task on your task list - maybe you have already completed it or it is not a `pending` task :confused:')
       }
     })
   }

@@ -8,11 +8,13 @@ var GENERAL_ERROR_MESSAGES = ['I\'m sorry, but there was an internal problem, it
 var TASK_ERROR_MESSAGES = ['I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.']
 var NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:','Looks like you should have been working on something else though... :alarm_clock:']
 
+var REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
+var REGEX_ALL_COLONS_THAT_ARE_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/g
+
 function randomMessage(messages) {
   var randomMessages = shuffle(messages)
   return randomMessages[0]
 }
-
 
 // define a method "trim" on the String prototype
 if(typeof(String.prototype.trim) === "undefined")
@@ -545,7 +547,7 @@ var init = function (controller) {
     })
   }
 
-  function cl2task(commandLine, oldTask) {
+  function cl2task(bot, message, commandLine, oldTask) {
     // initialize a task object with default priority = 'L'
     var result = {
       description: '',
@@ -557,17 +559,25 @@ var init = function (controller) {
       result = oldTask;
     }
 
-    var tokens = commandLine.split(' ')
+    commandLine = commandLine.replace(REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED,'__|__')
+    
+    var tokens = commandLine.split('__|__')
     var descriptionParts = []
 
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i];
       // if it was a modifier
-      if (token.indexOf(':') > -1) {
-        var orgKey = token.split(':')[0];
-        var key = token.split(':')[0];
-        var value = token.split(':')[1];
+      token = token.replace(REGEX_ALL_COLONS_THAT_ARE_NOT_QUOTED,'__|__')
+      if (token.indexOf('__|__') > -1) {
+        var orgKey = token.split('__|__')[0];
+        var key = token.split('__|__')[0];
+        var value = token.split('__|__')[1];
         key = resolveModifierShorthand(key);
+
+        if (value.indexOf('"') > -1) {
+          value = value.replace('"', '')
+        }
+        
         // special handling for "priority" which has some shorthand versions
         if (key === 'priority') {
           value = resolvePriority(value)
@@ -726,7 +736,7 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // create a task object from the user input
-    var task = cl2task(text)
+    var task = cl2task(bot, message, text)
 
     // get the token for the user 
     getIntheamToken(bot, message, message.user, function (token) {
@@ -778,7 +788,7 @@ var init = function (controller) {
           if (task.short_id == short_id) {
 
             // create a task object from old task and the user input 
-            var newTask = cl2task(text, task)
+            var newTask = cl2task(bot, message, text, task)
 
             // get the token for the user 
             getIntheamToken(bot, message, message.user, function (token) {

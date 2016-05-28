@@ -534,10 +534,7 @@ var init = function (controller) {
           descriptionParts.push(value)
         // in case of date values we can't just split on the ":"
         } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
-          bot.botkit.log('XXXXXXXXXX', key)
-          bot.botkit.log('XXXXXXXXXX', value)
           value = datejs(value)
-          bot.botkit.log('XXXXXXXXXX', value)
           result[key] = value;
         } else {
           result[key] = value;
@@ -705,8 +702,22 @@ var init = function (controller) {
         } else {
           priority = 'high" :closed_book:'
         }
-        var answerText = 'Alright, I\'ve added task '+ body.short_id + ' to the list with priority "' + priority
-        bot.reply(message, {text: answerText})
+
+        var answer = {
+            channel: message.channel,
+            as_user: true,
+          }
+        answer.text = 'Alright, I\'ve added task <https://inthe.am/tasks/' + body.id + '|' + body.short_id + '>' + ' to the list with priority "' + priority
+        
+        bot.api.chat.postMessage(answer, function (err, response) {
+          if (!err) {
+            bot.botkit.log('task details sent');
+          } else {
+            bot.botkit.log('error sending task details', response, err);     
+          }
+        })
+        // XXXX
+        
      
       })      
     });

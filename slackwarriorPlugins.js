@@ -1068,18 +1068,12 @@ var init = function (controller) {
   // * * * conversations * * * //
 
   // specific help for the task commands
-  // TODO: create a snippet/post instead?
   function helpTaskConvo(bot, message) {
     bot.startPrivateConversation(message, function(err, dm) {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
-      dm.say('With `task` you get an overview of your most urgent tasks')
-      dm.say('When you ask me for your `task list` I will get you a complete list of all your pending tasks')
-      dm.say('You can ask me to mark `task 23 done` once you\'ve completed task 23. You can find the ID (23 in this example) on your `task list` or on the `task` overview.')
-      dm.say('And last but not least I can add tasks to your list, here are some examples:')
-      dm.say('`task add remember the milk` to add the task "remember the milk" with default priority ("low") and without a project')
-      dm.say('`task add fix that bug priority:H project:foo` to add the task "fix that bug" with priority "high" for the project "foo"')
-      dm.say('`task add priority:M project:bar fix that other minor bug` to add the task "fix that other minor bug" with priority "medium" for the project "bar"')
-      dm.say('For more information about tasks I\'d suggest the documentation on taskwarrior.org and inthe.am')
+      dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`')
+      dm.say('You\'ll have to replace `23` with the `short_id` of the task you want to adress.')
+      dm.say('You can find more information about my available commands and tasks in general at slackwarrior.scheijan.net/doc.html')
       dm.next()
     })
   }
@@ -1092,7 +1086,7 @@ var init = function (controller) {
       dm.say('I\'m Slackwarrior and I\'m here to help you manage your tasks.');
       dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.');
       dm.say('And also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
-      dm.say('I can talk with inthe.am and list your tasks, `add` new ones and mark them completed as you work through the list. ');
+      dm.say('I can talk with inthe.am and list your tasks, `add` new ones and mark them completed as you work through the list.');
 
       // at the end of the conversation
       dm.on('end', function (convo) {

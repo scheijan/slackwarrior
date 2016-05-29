@@ -323,7 +323,7 @@ module.exports.task2details = function(task) {
   
   attachment.title = 'Details for task <https://inthe.am/tasks/' + task.id + '|' + task.short_id + '>'
   var text = '```';
-  text = text + 'ID'.padRight(19, ' ') + task.hort_id + '\n';
+  text = text + 'ID'.padRight(19, ' ') + task.short_id + '\n';
   var description = 'Description'.padRight(19, ' ') + task.description
   if (task.start) {
     description = description + ' (active)'

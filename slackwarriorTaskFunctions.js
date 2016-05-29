@@ -173,6 +173,18 @@ const task2attachment = (task) => {
   return attachment;
 }
 
+// add one line with modifier details to the given text
+const addDetailLine = (text, label, value, diff) => {
+  if (value) {
+    let line = `${text}${label.padRight(19, ' ')}${value}`
+    if (diff) {
+      line = `${line} (${diff})`
+    }
+    return `${line}\n`
+  }
+  return text
+}
+
 // create an attachment with details for a single task
 const task2details = (task) => {
   const attachment = {
@@ -226,31 +238,23 @@ const task2details = (task) => {
 
   attachment.title = `Details for task <https://inthe.am/tasks/${task.id}|${task.short_id}>`
   let text = '```';
-  text = `${text}${'ID'.padRight(19, ' ')}${task.short_id}\n`;
-  let description = 'Description'.padRight(19, ' ') + task.description
+  text = addDetailLine(text, 'ID', task.short_id)
+  let description = task.description
   if (task.start) {
     description = `${description} (active)`
   }
 
-  text = `${text}${description}\n`
-  text = `${text}${'Status'.padRight(19, ' ')}${task.status}\n`
-  if (task.project) {
-    text = `${text}${'Project'.padRight(19, ' ')}${task.project}\n`
-  }
-  text = `${text}${'Entered'.padRight(19, ' ')}${entry} (${entryDiff})\n`
-  if (start) {
-    text = `${text}${'Start'.padRight(19, ' ')}${start} (${startDiff})\n`
-  }
-  if (wait) {
-    text = `${text}${'Wait'.padRight(19, ' ')}${wait} (${waitDiff})\n`
-  }
-  if (scheduled) {
-    text = `${text}${'Scheduled'.padRight(19, ' ')}${scheduled} (${scheduledDiff})\n`
-  }
-  if (due) {
-    text = `${text}${'Due'.padRight(19, ' ')}${due} (${dueDiff})\n`
-  }
-  text = `${text}${'Last modified'.padRight(19, ' ')}${modified} (${modifiedDiff})\n`
+  text = addDetailLine(text, 'Description', description)
+
+  text = addDetailLine(text, 'Status', task.status)
+  text = addDetailLine(text, 'Project', task.project)
+  text = addDetailLine(text, 'Entered', entry, entryDiff)
+  text = addDetailLine(text, 'Start', start, startDiff)
+  text = addDetailLine(text, 'Wait', wait, waitDiff)
+  text = addDetailLine(text, 'Scheduled', scheduled, scheduledDiff)
+  text = addDetailLine(text, 'Due', due, dueDiff)
+  text = addDetailLine(text, 'Last Modified', modified, modifiedDiff)
+
   if (task.tags) {
     let tags = '';
     text = text + 'Tags'.padRight(19, ' ')
@@ -260,10 +264,12 @@ const task2details = (task) => {
     }
     text = `${text}${tags}\n`
   }
-  text = `${text}${'UUID'.padRight(19, ' ')}${task.uuid}\n`
-  text = `${text}${'Urgency'.padRight(19, ' ')}${task.urgency}\n`
+
+  text = addDetailLine(text, 'UUID', task.uuid)
+  text = addDetailLine(text, 'Urgency', task.urgency)
+
   if (task.priority) {
-    text = `${text}${'Priority'.padRight(19, ' ')}${task.priority}\n`
+    text = addDetailLine(text, 'Priority', task.priority)
   }
 
   if (task.annotations && task.annotations.length && task.annotations.length > 0) {

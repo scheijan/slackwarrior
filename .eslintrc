@@ -17,9 +17,10 @@
   'rules': {
     'func-names': 0,
     'max-len': 0,
-    'arrow-body-style': ['error', 'as-needed'],
+    'arrow-body-style': [2, 'as-needed'],
     'semi': 0,
-    'strict': 0
+    'strict': 0,
+    'camelcase': 0
   },
   
 }

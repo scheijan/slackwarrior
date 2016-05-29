@@ -19,11 +19,11 @@ const bot = controller.spawn({
   // familie
   // token: '***REMOVED***',
   // my adaeze
-  token: '***REMOVED***',
+  // token: '***REMOVED***',
   // metaebene
   // token: '***REMOVED***',
   // slackwarrior
-  // token: '***REMOVED***',
+  token: '***REMOVED***',
   retry: Infinity,
 }).startRTM()
 

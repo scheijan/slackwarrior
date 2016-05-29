@@ -93,7 +93,7 @@ const init = function (controller) {
 
   // ask the user for their new token and add it to local storage
   function newTokenConvo(bot, message, u) {
-    let user = u;
+    const user = u;
     bot.startPrivateConversation(message, (err, convo) => {
       if (!err) {
         convo.ask('Ok, great, to get started please tell me your inthe.am token', (response) => {

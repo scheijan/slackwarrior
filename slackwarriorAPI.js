@@ -105,7 +105,6 @@ function getTasks(bot, message, user, short_id, cb) {
     const settings = prepareAPI('tasks', 'GET', token);
     // call the API pass the callback function on
     apiRequest(bot, message, settings, (err, response, body) => {
-      bot.botkit.log('XXXXXXXXXXXX', err, short_id, body)
       if (short_id) {
         let found = false;
         for (let i = 0; i < body.length; i++) {

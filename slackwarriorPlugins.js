@@ -879,26 +879,34 @@ var init = function (controller) {
         // if this is the task to start/stop
         if (task.short_id == short_id) {
 
-          getIntheamToken(bot, message, message.user, function (token) {
-            var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
-       
-            // call the inthe.am API and mark the task as started or stopped
-            apiRequest(bot, message, settings, function (err, response, body) {
-              // remove the thinking_face reaction again
-              removeReaction(bot, message, 'thinking_face')
-             
-              bot.botkit.log(mode + 'ed task ' + short_id + ' for user ' + message.user);
-              var answerText = 'Ok, I have '
-              if (mode === 'start') {
-                answerText = answerText + 'started '
-              } else {
-                answerText = answerText + 'stopped '
-              }
-              answerText = answerText + 'the timer for task ' + short_id + ' for you. :stopwatch:';
+          if (mode === 'start' && task.start) {
+            removeReaction(bot, message, 'thinking_face')
+            bot.reply(message, 'Hm, you\'ve already started this task ' + moment(task.start).fromNow() + '. :confused:')
+          } else if (mode === 'stop' && !task.start) {
+            removeReaction(bot, message, 'thinking_face')
+            bot.reply(message, 'Hm, I\'m sorry, but I can\'t really stop a task that hasn\'t been started yet. :confused:')
+          } else {
+            getIntheamToken(bot, message, message.user, function (token) {
+              var settings = prepareAPI('tasks/' + task.id + '/' + mode + '/', 'POST', token);
+         
+              // call the inthe.am API and mark the task as started or stopped
+              apiRequest(bot, message, settings, function (err, response, body) {
+                // remove the thinking_face reaction again
+                removeReaction(bot, message, 'thinking_face')
+               
+                bot.botkit.log(mode + 'ed task ' + short_id + ' for user ' + message.user);
+                var answerText = 'Ok, I have '
+                if (mode === 'start') {
+                  answerText = answerText + 'started '
+                } else {
+                  answerText = answerText + 'stopped '
+                }
+                answerText = answerText + 'the timer for task ' + short_id + ' for you. :stopwatch:';
 
-              bot.reply(message, answerText)
-            })
-          });
+                bot.reply(message, answerText)
+              })
+            });
+          }
         }
       }
   

@@ -14,7 +14,9 @@
     "cheerio": "^0.20.0",
     "date.js": "^0.3.1",
     "moment": "^2.13.0",
-    "request": "^2.72.0",
+    "request": "^2.72.0"   
+  },
+  "devDependencies": {
     "eslint": "^2.8.0",
     "eslint-config-airbnb": "~8.0.0",
     "eslint-plugin-import": "^1.6.1",

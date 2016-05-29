@@ -1,3 +1,23 @@
+// define a method "trim" on the String prototype
+if(typeof(String.prototype.trim) === "undefined")
+{
+    String.prototype.trim = function() 
+    {
+        return String(this).replace(/^\s+|\s+$/g, '');
+    };
+}
+
+// define a methog "padRight" on the String prototype
+String.prototype.padRight = function(l, c) {return this+Array(l-this.length+1).join(c||" ")}
+
+// define a methog "padLeft" on the String prototype
+String.prototype.padLeft = function(l, c) {
+    var str = this;
+    while (str.length < l)
+        str = c + str;
+    return str;
+}
+
 // this function decorates a given controller with additional functions and returns the controller obj
 exports.decorate = function (controller, bot) {
 

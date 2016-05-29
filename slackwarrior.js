@@ -11,6 +11,8 @@ var controller = Botkit.slackbot({
   json_file_store: './slackwarrior_jsondb'
 });
 
+GLOBAL.controller = controller;
+
 // connect the bot to a stream of messages
 var bot = controller.spawn({
   // familie
@@ -39,6 +41,32 @@ controller.on('rtm_open', function (bot, message) {
 controller.on('rtm_close', function (bot, message) {
   bot.botkit.log('Connection to RTM API closed.');
 });
+
+// adds the given reaction to the given message
+bot.addReaction = function(message, reaction) {
+  this.api.reactions.add({
+    timestamp: message.ts,
+    channel: message.channel,
+    name: reaction,
+    }, function(err, res) {
+    if (err) {
+      this.botkit.log('failed to add ' + reaction + ' reaction', err);
+    }
+  });
+}
+
+// removes the given reaction from the given message
+bot.removeReaction = function(message, reaction) {
+  this.api.reactions.remove({
+    timestamp: message.ts,
+    channel: message.channel,
+    name: reaction,
+    }, function(err, res) {
+    if (err) {
+      this.botkit.log('failed to remove ' + reaction + ' reaction', err);
+    }
+  });
+}
 
 
 controller = controllerFunctions.decorate(controller, bot)

@@ -233,7 +233,7 @@ const task2details = (task) => {
   }
 
   text = `${text}${description}\n`
-  text = `${text}${'Status'.padRight(19, ' ')}{task.status}\n`
+  text = `${text}${'Status'.padRight(19, ' ')}${task.status}\n`
   if (task.project) {
     text = `${text}${'Project'.padRight(19, ' ')}${task.project}\n`
   }

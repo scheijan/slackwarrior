@@ -1,3 +1,4 @@
+'use strict'
 // define a method "trim" on the String prototype
 if (typeof(String.prototype.trim) === 'undefined') {
   String.prototype.trim = function () {

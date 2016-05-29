@@ -510,6 +510,7 @@ var init = function (controller) {
     })
   }
 
+  // convert a command line (from adding or modifying tasks) into a task object
   function cl2task(bot, message, commandLine, oldTask, annotation) {
     // initialize a task object with default priority = 'L'
     var result = {
@@ -522,43 +523,51 @@ var init = function (controller) {
       result = oldTask;
     }
 
+    // initialize an empty array for tags
     if (!result.tags) {
       result.tags = []
     }
 
+    // replace all whitespace characters which are not quoted with a special squence
     commandLine = commandLine.replace(REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED,'__|__')
     
+    // split the command line into tokens
     var tokens = commandLine.split('__|__')
+    // empty array for text in the command line - could be description or annotation
     var descriptionParts = []
 
     for (var i = 0; i < tokens.length; i++) {
       var token = tokens[i];
-      // if it was a modifier
+      // if it was a modifier replace the first colon with a special sequence
       token = token.replace(REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED,'__|__')
+      // split into key and value
       if (token.indexOf('__|__') > -1) {
-        var orgKey = token.split('__|__')[0];
         var key = token.split('__|__')[0];
         var value = token.split('__|__')[1];
+
+        // try to resolve the key if it was a shorthand version
         key = resolveModifierShorthand(key);
 
+        // if the value was quotes, remove the quotes here
         if (value.indexOf('"') > -1) {
           value = value.replace('"', '')
         }
-        
         // special handling for "priority" which has some shorthand versions
         if (key === 'priority') {
           value = resolvePriority(value)
           result[key] = value;
+        // special handling for "status" which has some shorthand versions
         } else if (key === 'status') {
           value = resolveStatus(value)
           result[key] = value;
-
+        // if we're modifying a description
         } else if (key === 'description') {
           descriptionParts.push(value)
-        // in case of date values we can't just split on the ":"
+        // in case of date values convert a given "human" date into a datetime object
         } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
           value = datejs(value)
           result[key] = value;
+        // in any other case just add to the result
         } else {
           result[key] = value;
         }
@@ -574,19 +583,21 @@ var init = function (controller) {
       } else if (token.startsWith('-')) {
         var tag = token.split('-')[1]
         var index = result.tags.indexOf(tag)
+        // if the tag is in the list, remove it
         if (index > -1) {
           result.tags.splice(index, 1);
         }
-      // if it was none of the above we're creating a new task and this part of the description
+      // if it was none of the above we're creating a new task and this part of the description or annotation
       } else {
         descriptionParts.push(token)
       }
     }
-
+    // if there were text parts and the parameter "annotation" is not true
     if (descriptionParts.length > 0 && !annotation) {
       result.description = descriptionParts.join(' ').trim()
     }
 
+    // if the parameter "annotation" was true, the text parts of the commandline will be considered to be an annotation
     if (annotation) {
       if (!result.annotations) {
         result.annotations = []
@@ -597,6 +608,7 @@ var init = function (controller) {
     return result;
   }
 
+  // resolve a modifier name (incl. all possible shorthand versions)
   function resolveModifierShorthand(modifier) {
     var modifiers = {
       priority: 'priority',
@@ -646,6 +658,7 @@ var init = function (controller) {
     return modifiers[modifier];
   }
 
+  // reolve a value for the field "priority" (incl. all possible shorthand versions)
   function resolvePriority(prio) {
     prio = prio.toLowerCase()
     if (prio === 'h' || prio === 'hi' || prio === 'hig' || prio === 'high') {
@@ -656,10 +669,11 @@ var init = function (controller) {
       return 'L'
     }
   }
-
-  function resolveStatus(prio) {
+  
+  // reolve a value for the field status (incl. all possible shorthand versions)
+  function resolveStatus(status) {
     var result = 'pending';
-    var prios = {
+    var statusKeys = {
       pending: 'pending',
       pendin: 'pending',
       pendi: 'pending',
@@ -692,12 +706,12 @@ var init = function (controller) {
       d: 'deleted',
     }
 
-    prio = prio.toLowerCase()
-    if (prios[prio]) {
-      result = prios[prio]
+    status = status.toLowerCase()
+    if (statusKeys[status]) {
+      result = statusKeys[status]
     }
     
-    return prio
+    return status
   }
 
   // parse the user's command and add a task using the inthe.am API
@@ -909,7 +923,6 @@ var init = function (controller) {
           }
         }
       }
-  
     })
   }
 

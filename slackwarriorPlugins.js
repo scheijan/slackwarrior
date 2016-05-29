@@ -511,7 +511,7 @@ var init = function (controller) {
   }
 
   // convert a command line (from adding or modifying tasks) into a task object
-  function cl2task(bot, message, commandLine, oldTask, annotation) {
+  function cl2task(commandLine, oldTask, annotation) {
     // initialize a task object with default priority = 'L'
     var result = {
       description: '',
@@ -720,7 +720,7 @@ var init = function (controller) {
     addReaction(bot, message, 'thinking_face')
 
     // create a task object from the user input
-    var task = cl2task(bot, message, text)
+    var task = cl2task(text)
 
     // get the token for the user 
     getIntheamToken(bot, message, message.user, function (token) {
@@ -780,7 +780,7 @@ var init = function (controller) {
         if (task.short_id == short_id) {
 
           // create a task object from old task and the user input 
-          var newTask = cl2task(bot, message, text, task, annotate)
+          var newTask = cl2task(text, task, annotate)
 
           // get the token for the user 
           getIntheamToken(bot, message, message.user, function (token) {

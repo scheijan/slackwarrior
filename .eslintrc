@@ -1,0 +1,25 @@
+{
+  'env': {
+    'es6': true,
+    'browser': false,
+    'jquery': false,
+    'mocha': false,
+  },
+  'globals': {
+    'chai': false,
+  	'chai.assert': false,
+  	'sinon': false,
+  	'expect': false,
+  	'_': false,
+    'assert': false,
+  },
+  'extends': 'airbnb',
+  'rules': {
+    'func-names': 0,
+    'max-len': 0,
+    'arrow-body-style': ['error', 'as-needed'],
+    'semi': 0,
+    'strict': 0
+  },
+  
+}

@@ -93,8 +93,9 @@ function getIntheamToken(bot, message, userID, cb) {
       bot.botkit.log('found user token in local storage', token)
       cb(token)
     } else {
-      bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your tasks. Please feel free to ask me for `help` any time. :robot_face:')
       bot.botkit.log('error getting user or user token from storage', err)
+      bot.removeReaction(message, 'thinking_face')
+      bot.reply(message, 'Looks like we haven\'t been introduced yet. I\'m Slackwarrior and I\'m here to help you manage your tasks. Please feel free to ask me for `help` any time. :robot_face:')
     }
   })
 }

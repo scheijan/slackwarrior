@@ -3,7 +3,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const Botkit = require('botkit');
 
-const defaultPlugins = require('./defaultPlugins');
 const slackwarrior = require('./slackwarriorPlugins');
 const controllerFunctions = require('./controllerFunctions')
 
@@ -19,11 +18,11 @@ const bot = controller.spawn({
   // familie
   // token: '***REMOVED***',
   // my adaeze
-  // token: '***REMOVED***',
+  token: '***REMOVED***',
   // metaebene
   // token: '***REMOVED***',
   // slackwarrior
-  token: '***REMOVED***',
+  // token: '***REMOVED***',
   retry: Infinity,
 }).startRTM()
 
@@ -72,4 +71,3 @@ bot.removeReaction = function (message, reaction) {
 controller = controllerFunctions.decorate(controller, bot)
 
 slackwarrior.init(controller);
-defaultPlugins.init(controller);

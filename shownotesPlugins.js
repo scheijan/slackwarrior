@@ -4,11 +4,11 @@ const cheerio = require('cheerio');
 const Promise = require('bluebird');
 Promise.promisifyAll(require('request'));
 
-
 const getErrorMessage = (channelName) =>
   `Ummm... Sorry, but that did not work as expected... Did I maybe read that wrong? Which channel did you mean? I read "${channelName}", but my eyes aren't what they used to be... :eyeglasses:`;
 
 const init = function (controller) {
+  // get a channel ID from a Slack channel link
   function cleanChannelID(cID) {
     let channelID = cID;
     channelID = channelID.replace('#', '');
@@ -17,6 +17,7 @@ const init = function (controller) {
     return channelID
   }
 
+  // resolve a list of promises and create shownotes from the result
   function promises2shownotes(bot, message, urls, promises, channel, mode) {
     Promise.all(promises.map((promise) => promise.reflect())).then((results) => {
       bot.botkit.log('got promises to check', results.length);
@@ -77,6 +78,7 @@ const init = function (controller) {
     })
   }
 
+  // collect saved links from a channel and create an array of promises
   function urls2osf(bot, message, channel) {
     const urls = channel.links;
     const promises = [];
@@ -86,11 +88,11 @@ const init = function (controller) {
     }
 
     bot.botkit.log('got URLs to check', urls.length);
-    // bot.reply(message, 'Please hold on just a second while I get some titles for those ' + urls.length + ' URLs you got there...')
 
     promises2shownotes(bot, message, urls, promises, channel, 'pasted links')
   }
 
+  // collect pinned items with links from a channel and create shownotes from the result
   function pins2osf(bot, message, channel, pins) {
     const urls = [];
     const promises = [];
@@ -123,6 +125,7 @@ const init = function (controller) {
     promises2shownotes(bot, message, urls, promises, channel, 'pinned items')
   }
 
+  // generate shownotes from saved links and pinned items for a given channel
   function shownotes(bot, message, channelName) {
     bot.botkit.log('creating shownotes for channel', channelName);
     bot.reply(message, `Please hold on just a second while I try to generate the shownotes for ${channelName}`)
@@ -159,11 +162,13 @@ const init = function (controller) {
     })
   }
 
+  // command to generate shownotes
   controller.hears(['shownotes (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     shownotes(bot, message, channelName);
   });
 
+  // command to add a shownote to the list of saved links
   controller.hears(['shownote (.*)'], 'direct_mention,mention', (bot, message) => {
     const channelID = message.channel;
     controller.storage.channels.get(channelID, (err, c) => {
@@ -204,6 +209,7 @@ const init = function (controller) {
     });
   });
 
+  // command to have the bort start saving links in a channel
   controller.hears(['start listening to (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     bot.botkit.log('trying to listen to channel', channelName);
@@ -233,6 +239,7 @@ const init = function (controller) {
     });
   });
 
+  // command to have the bort stop saving links in a channel
   controller.hears(['stop listening to (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     bot.botkit.log('listening to channel', channelName);
@@ -290,6 +297,7 @@ const init = function (controller) {
     });
   });
 
+  // listen to every message in case the bot is "listening" to the channel
   controller.hears(['(.*)'], 'ambient', (bot, message) => {
     const channelID = message.channel;
     controller.storage.channels.get(channelID, (err, c) => {
@@ -343,6 +351,7 @@ const init = function (controller) {
     });
   });
 
+  // command to clear all pinned items in a given channel
   controller.hears(['clear pins in (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     const channelID = cleanChannelID(channelName)
@@ -408,6 +417,7 @@ const init = function (controller) {
     });
   });
 
+  // command to reset the list of saved links for a given channel
   controller.hears(['clear links in (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     const channelID = cleanChannelID(channelName)

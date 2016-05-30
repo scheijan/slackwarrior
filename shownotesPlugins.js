@@ -171,19 +171,25 @@ const init = function (controller) {
   // command to add a shownote to the list of saved links
   controller.hears(['shownote (.*)'], 'direct_mention,mention', (bot, message) => {
     const channelID = message.channel;
+    // get the channel from the storag
     controller.storage.channels.get(channelID, (err, c) => {
       const channel = c;
       if (!err) {
+        // if we're supposed to listen to this channel
         if (channel.listening) {
+          // if there are no saved links yet, initialize an empty array for them
           if (!channel.links) {
             channel.links = [];
           }
 
+          // prefix the line so we can find it again later
           const shownote = `SHOWNOTE:${message.match[1]}`;
 
+          // add the line to the saved links
           channel.links.push(shownote);
           bot.botkit.log('saved a shownote', shownote);
 
+          // save the list of saved links back to storage
           controller.storage.channels.save(channel, (saveErr, id) => {
             if (saveErr) {
               bot.botkit.log('error saving link', err, id);
@@ -213,18 +219,19 @@ const init = function (controller) {
   controller.hears(['start listening to (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
     bot.botkit.log('trying to listen to channel', channelName);
-    // var channelID = controller.getChannelID(channelName);
     const channelID = cleanChannelID(channelName)
 
-    bot.botkit.log('channelID', channelID);
+    // get the channel from the storage
     controller.storage.channels.get(channelID, (err, c) => {
       const channel = c;
       if (!channel) {
         bot.botkit.log('getting channel failed', err, channel);
         bot.reply(message, getErrorMessage(channelName));
       } else {
+        // if we're already listening to the channel, tell the user
         if (channel.listening) {
           bot.reply(message, `I'm already listening to ${channelName}. :microphone:`);
+        // if not, set the listening flag and save the channel back to storage
         } else {
           channel.listening = true;
           controller.storage.channels.save(channel, (saveErr) => {
@@ -242,31 +249,31 @@ const init = function (controller) {
   // command to have the bort stop saving links in a channel
   controller.hears(['stop listening to (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     const channelName = message.match[1];
-    bot.botkit.log('listening to channel', channelName);
     const channelID = cleanChannelID(channelName)
-    // bot.botkit.log('channelID', channelID);
+    // get the channel from storage
     controller.storage.channels.get(channelID, (geterr, c) => {
       const channel = c;
       if (!channel) {
         bot.botkit.log('getting channel failed', geterr, channel);
         bot.reply(message, getErrorMessage(channelName));
       } else {
+        // if we were listening to the channel
         if (channel.listening) {
+          // remove the flag
           channel.listening = false;
+          // and save the channel back to storage
           controller.storage.channels.save(channel, (saveErr) => {
             if (saveErr) {
               bot.reply(message, getErrorMessage(channelName));
             } else {
               bot.reply(message, `Ok, ok, I will stop listening to ${channelName}. And yes, no worries, I know the rules: What happens in ${channelName} stays in ${channelName} :hear_no_evil:`);
-
+              // ask the user whether they want the shownotes generated right now
               bot.startConversation(message, (err, convo) => {
                 if (!err) {
                   convo.ask(`Do you want me to create the shownotes for ${channelName}?`, [
                     {
                       pattern: bot.botkit.utterances.yes,
                       callback: (response, cconvo) => {
-                        // since no further messages are queued after this,
-                        // the conversation will end naturally with status == 'completed'
                         shownotes(bot, message, channelName);
                         cconvo.next();
                       },
@@ -290,6 +297,7 @@ const init = function (controller) {
               })
             }
           });
+        // if we weren't listening to the channel, tell the user
         } else {
           bot.reply(message, `Well, I was not listening to ${channelName} so far. But if you want me to, you just have to ask me to \`start\`... :robot_face:`);
         }
@@ -303,21 +311,24 @@ const init = function (controller) {
     controller.storage.channels.get(channelID, (err, c) => {
       const channel = c;
       if (!err) {
+        // if we're supposed to listen to the channel
         if (channel.listening) {
+          // if there are no saved links yet, initialize an empty array for them
           if (!channel.links) {
             channel.links = [];
           }
 
           const text = message.text;
+          // if the message contains a link
           if (text.indexOf('<') > -1 && text.indexOf('>') > -1 && text.indexOf('.') > -1) {
-            //  extract the url from the message
+            // extract the url from the message
             const re = new RegExp('\\<([^\\<\\>]+\\.+[^\\<\\>]+)\\>', 'gi');
             const urls = text.match(re);
             // bot.botkit.log('urls', urls);
             if (urls && urls.length > 0) {
               for (let i = 0; i <= urls.length - 1; i++) {
                 let url = urls[i];
-                bot.botkit.log('working on link', url);
+                // remove the markup
                 if (url.indexOf('|') > -1) {
                   url = url.split('|')[0]
                 }
@@ -328,6 +339,7 @@ const init = function (controller) {
                   url = url.split('<')[1]
                 }
 
+                // add the link to the list of saved links
                 bot.botkit.log('working on link', url);
                 if (channel.links.indexOf(url) < 0) {
                   channel.links.push(url);
@@ -335,6 +347,7 @@ const init = function (controller) {
                 }
               }
 
+              // save the channel with the new link back to storage
               controller.storage.channels.save(channel, (saveErr, id) => {
                 if (saveErr) {
                   bot.botkit.log('error saving link', err, id);
@@ -358,12 +371,13 @@ const init = function (controller) {
 
     bot.reply(message, 'Please be very careful with this command, removing pinned items cannot be undone :bangbang:')
     bot.startConversation(message, (convoErr, convo) => {
+      // verify the user actually wants that
       convo.ask(`Are you sure you want me to remove all pinned items in ${channelName}?`, [
         {
           pattern: bot.utterances.yes,
           callback: (response, yconvo) => {
             yconvo.say('As you wish...');
-
+            // list all pins
             bot.api.pins.list({ channel: channelID }, (err, res) => {
               if (!err) {
                 // controler.storage.shownotes = [];
@@ -373,12 +387,14 @@ const init = function (controller) {
                   const pin = res.items[i];
                   bot.botkit.log('going to remove', pin);
 
+                  // if this was a pinned file, we have to pass the file.id
                   if (pin.file && pin.file.id) {
                     bot.api.pins.remove({ channel: channelID, file: pin.file.id }, (pinsErr) => {
                       if (pinsErr) {
                         bot.botkit.log('removing pin failed', pinsErr);
                       }
                     })
+                  // if it was a pinned message, we have to pass the message.ts
                   } else {
                     bot.api.pins.remove({ channel: channelID, timestamp: pin.message.ts }, (pinsErr) => {
                       if (pinsErr) {
@@ -424,17 +440,22 @@ const init = function (controller) {
 
     bot.reply(message, 'Please be very careful with this command, deleting saved links cannot be undone :bangbang:')
     bot.startConversation(message, (err, convo) => {
+      // verify the user actually wants that
       convo.ask(`Are you sure you want me to remove all saved links in ${channelName}?`, [
         {
           pattern: bot.utterances.yes,
           callback: (response, yconvo) => {
+            // get the channel from storage
             controller.storage.channels.get(channelID, (geterr, c) => {
               const channel = c;
               if (!channel) {
                 bot.botkit.log('getting channel failed', err, channel);
                 bot.reply(message, 'I did not find that channel in my dossier :confused:');
+              // if there were links
               } else if (channel.links && channel.links.length > 0) {
+                // reset the list
                 channel.links = [];
+                // and save the channel back to storage
                 controller.storage.channels.save(channel, (saveErr) => {
                   if (saveErr) {
                     yconvo.say(`I was not able to delete the links in channel ${channelName} :confused:`);

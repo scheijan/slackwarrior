@@ -1,6 +1,11 @@
 'use strict'
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
+if (!process.env.token) {
+  console.log('Error: Specify token in environment')
+  process.exit(1)
+}
+
 const Botkit = require('botkit');
 
 const shownotesPlugins = require('./shownotesPlugins');
@@ -14,14 +19,7 @@ let controller = Botkit.slackbot({
 
 // connect the bot to a stream of messages
 const bot = controller.spawn({
-  // familie
-  // token: '***REMOVED***',
-  // my adaeze
-  // token: '***REMOVED***',
-  // metaebene
-  token: '***REMOVED***',
-  // slackwarrior
-  // token: '***REMOVED***',
+  token: process.env.token,
   retry: Infinity,
 }).startRTM()
 
@@ -34,7 +32,6 @@ controller.on('rtm_open', (b) => {
   // add all users to global variable users and update storage.users
   // controller.initUsers(bot);
 });
-
 
 // this is fired whenever we get disconnected from the RTM API
 controller.on('rtm_close', (b) => {

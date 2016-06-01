@@ -292,8 +292,7 @@ const init = function (controller) {
     helpConvo(bot, message)
   })
 
-  // handle all commands that start with "task" (except for "task help") and call their handler functions
-  controller.hears(['^task'], 'direct_message,direct_mention,mention', (bot, message) => {
+  function handleTaskCommand(bot, message) {
     let text = message.text;
     const lcText = message.text.toLowerCase();
     // task add
@@ -317,6 +316,11 @@ const init = function (controller) {
     } else {
       bot.reply(message, messages.randomTaskErrorMessage())
     }
+  }
+
+  // handle all commands that start with "task" (except for "task help") and call their handler functions
+  controller.hears(['^task'], 'direct_message,direct_mention,mention', (bot, message) => {
+    handleTaskCommand(bot, message)
   });
 
   // handle request to the bot to introduce itself and provide ways to get help
@@ -366,6 +370,16 @@ const init = function (controller) {
       }
     }
   })
+
+  controller.on('slash_command', (bot, message) => {
+    if (message.text === 'help') {
+      helpTaskConvo(bot, message)
+    } else {
+      const newMessage = message;
+      newMessage.text = `task ${newMessage.text}`
+      handleTaskCommand(bot, newMessage)
+    }
+  });
 }
 
 exports.init = init;

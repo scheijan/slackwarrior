@@ -16,7 +16,7 @@ let controller = Botkit.slackbot({
   json_file_store: './slackwarrior_jsondb',
 });
 
-GLOBAL.controller = controller;
+global.controller = controller;
 
 // connect the bot to a stream of messages
 const bot = controller.spawn({

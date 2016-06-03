@@ -370,16 +370,6 @@ const init = function (controller) {
       }
     }
   })
-
-  controller.on('slash_command', (bot, message) => {
-    if (message.text === 'help') {
-      helpTaskConvo(bot, message)
-    } else {
-      const newMessage = message;
-      newMessage.text = `task ${newMessage.text}`
-      handleTaskCommand(bot, newMessage)
-    }
-  });
 }
 
 exports.init = init;

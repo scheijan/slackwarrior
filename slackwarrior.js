@@ -66,10 +66,6 @@ bot.removeReaction = function (message, reaction) {
   });
 }
 
-controller.setupWebserver(13000, (err, webserver) => {
-  controller.createWebhookEndpoints(webserver);
-});
-
 controller = controllerFunctions.decorate(controller, bot)
 
 slackwarrior.init(controller);

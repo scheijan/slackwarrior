@@ -24,6 +24,8 @@ const bot = controller.spawn({
   retry: Infinity,
 }).startRTM()
 
+global.rtmbot = bot;
+
 
 // this is fired whenever we connect to the RTM API
 controller.on('rtm_open', (b) => {
@@ -42,29 +44,31 @@ controller.on('rtm_close', (b) => {
 
 // adds the given reaction to the given message
 bot.addReaction = function (message, reaction) {
-  this.api.reactions.add({
+if (message.ts) {
+  rtmbot.api.reactions.add({
     timestamp: message.ts,
     channel: message.channel,
     name: reaction,
   }, function (err) {
     if (err) {
-      this.botkit.log('failed to add reaction `${reaction}`', err);
+      rtmbot.botkit.log('failed to add reaction `${reaction}`', err);
     }
   });
-}
+}}
 
 // removes the given reaction from the given message
 bot.removeReaction = function (message, reaction) {
-  this.api.reactions.remove({
+if (message.ts) {
+  rtmbot.api.reactions.remove({
     timestamp: message.ts,
     channel: message.channel,
     name: reaction,
   }, function (err) {
     if (err) {
-      this.botkit.log(`failed to remove ${reaction} reaction`, err);
+      rtmbot.botkit.log(`failed to remove ${reaction} reaction`, err);
     }
   });
-}
+}}
 
 controller.setupWebserver(13000, (err, webserver) => {
   controller.createWebhookEndpoints(webserver);

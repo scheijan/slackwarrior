@@ -6,15 +6,17 @@ const init = function (controller) {
   // * * * conversations * * * //
 
   // specific help for the task commands
-  function helpTaskConvo(bot, message) {
-    bot.startPrivateConversation(message, (err, dm) => {
-      dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
-      dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`')
-      dm.say('You\'ll have to replace `23` with the `short_id` of the task you want to adress.')
-      dm.say('You can find more information about my available commands and tasks in general at slackwarrior.scheijan.net/doc.html')
-      dm.next()
-    })
-  }
+  function helpTaskConvo(bot, message, replyPrivate) {
+ let reply = bot.reply
+    let replyDelayed = bot.reply
+    if (replyPrivate) {
+      reply = bot.replyPrivate
+      replyDelayed = bot.replyPrivateDelayed
+    }
+    reply(message, 'All commands to work with tasks start with `task`. Right now I know the following commands:\n`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`')
+    replyDelayed(message, 'You\'ll have to replace `23` with the `short_id` of the task you want to adress.')
+    replyDelayed(message, 'You can find more information about my available commands and tasks in general at slackwarrior.scheijan.net/doc.html')
+}
 
   // general help, offer ways to get more specific help
   function helpConvo(bot, message) {
@@ -296,6 +298,7 @@ const init = function (controller) {
     let text = message.text;
     const lcText = message.text.toLowerCase();
     // task add
+	bot.botkit.log('lcText', lcText)
     if (lcText.indexOf('task add ') > -1) {
       text = text.split('task add ')[1]
       if (text && text.length > 0) {
@@ -311,7 +314,7 @@ const init = function (controller) {
     } else if (lcText.indexOf('task list') > -1) {
       api.sendAllTasks(bot, message);
     // task
-    } else if (lcText === 'task') {
+    } else if (String(lcText).trim() === 'task' || lcText === 'task ') {
       api.sendTasks(bot, message);
     } else {
       bot.reply(message, messages.randomTaskErrorMessage())
@@ -373,11 +376,11 @@ const init = function (controller) {
 
   controller.on('slash_command', (bot, message) => {
     if (message.text === 'help') {
-      helpTaskConvo(bot, message)
+      helpTaskConvo(bot, message, true)
     } else {
       const newMessage = message;
       newMessage.text = `task ${newMessage.text}`
-      handleTaskCommand(bot, newMessage)
+      handleTaskCommand(rtmbot, newMessage)
     }
   });
 }

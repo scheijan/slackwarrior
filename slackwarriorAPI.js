@@ -132,12 +132,12 @@ function getTasks(bot, message, user, short_id, cb) {
 function sendAllTasks(bot, message) {
   bot.botkit.log('getting all tasks for user', message.user);
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+//  bot.addReaction(message, 'thinking_face')
 
   // get a list of all tasks
   getTasks(bot, message, message.user, false, (err, response, body) => {
     // remove the thinking face again
-    bot.removeReaction(message, 'thinking_face')
+ //   bot.removeReaction(message, 'thinking_face')
 
     // sort list of tasks by urgency
     const tasks = body;
@@ -189,7 +189,7 @@ function sendAllTasks(bot, message) {
       }, (uploadErr) => {
         // bot.botkit.log('res', res);
         if (uploadErr) {
-          bot.botkit.log('err uploading tasks snippet', err);
+          bot.botkit.log('err uploading tasks snippet', uploadErr);
           bot.reply(message, 'There was some problem uploading the tasks file')
           bot.reply(message, messages.randomErrorMessage())
         } else {

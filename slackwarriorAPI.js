@@ -189,7 +189,7 @@ function sendAllTasks(bot, message) {
       }, (uploadErr) => {
         // bot.botkit.log('res', res);
         if (uploadErr) {
-          bot.botkit.log('err uploading tasks snippet', err);
+          bot.botkit.log('err uploading tasks snippet', uploadErr);
           bot.reply(message, 'There was some problem uploading the tasks file')
           bot.reply(message, messages.randomErrorMessage())
         } else {

@@ -12,9 +12,10 @@
     "bluebird": "^3.4.0",
     "botkit": "0.2.0",
     "cheerio": "^0.20.0",
+    "dashbot": "^0.5.0",
     "date.js": "^0.3.1",
     "moment": "^2.13.0",
-    "request": "^2.72.0"   
+    "request": "^2.72.0"
   },
   "devDependencies": {
     "eslint": "^2.8.0",

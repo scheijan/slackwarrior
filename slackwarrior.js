@@ -8,6 +8,7 @@ if (!process.env.token) {
 
 const Botkit = require('botkit');
 
+const dashbot = require('dashbot')(process.env.DASHBOT_API_KEY).slack;
 const slackwarrior = require('./slackwarriorPlugins');
 const controllerFunctions = require('./controllerFunctions')
 
@@ -15,6 +16,10 @@ let controller = Botkit.slackbot({
   debug: false,
   json_file_store: './slackwarrior_jsondb',
 });
+
+// Add the dashbot middleware
+controller.middleware.receive.use(dashbot.receive);
+controller.middleware.send.use(dashbot.send);
 
 global.controller = controller;
 

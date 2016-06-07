@@ -345,14 +345,19 @@ const init = function (controller) {
     }, 3000)
   })
 
-  // slackwarrior is always hard at work
-  controller.hears(['hard at work'], 'direct_message,direct_mention,mention', (bot, message) => {
-    bot.reply(message, 'http://tinyurl.com/craftybot-gif')
-  })
-
   // handle a user's request for onboarding
   controller.hears(['onboarding'], 'direct_message,direct_mention,mention', (bot, message) => {
     onboardingConvo(bot, message)
+  })
+
+   // reply if a user thanks the bot
+  controller.hears(['thanks', 'thank you', 'thankful', 'grateful', 'gratitude'], 'direct_message,direct_mention,mention', (bot, message) => {
+    bot.reply(message, messages.randomThanksMessage())
+  })
+
+  // slackwarrior is always hard at work
+  controller.hears(['hard at work'], 'direct_message,direct_mention,mention', (bot, message) => {
+    bot.reply(message, 'http://tinyurl.com/craftybot-gif')
   })
 
   // handle reactions added to the bot's messages

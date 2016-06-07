@@ -1,6 +1,7 @@
 'use strict'
 // general error messages
 const GENERAL_ERROR_MESSAGES = ['I\'m sorry, but there was an internal problem, it\'s probably the old hydraulic pump again. Please try again later, it should be less squeaky once it\'s cooled down a little...']
+const THANKS_MESSAGES = ['You are very welcome!', 'I\'m glad to help!', 'I\'m happy to be of service!']
 const TASK_ERROR_MESSAGES = ['I\'m sorry, but I didn\'t understand that command. Please feel free to ask for `task help` at any time, if you want me to show you the available commands again.']
 const NOT_MOST_URGENT_MESSAGES = ['You have more urgent tasks though... :zipper_mouth_face:',
                                 'Looks like you should have been working on something else though... :building_construction:',
@@ -41,3 +42,7 @@ module.exports.randomNotMostUrgendMessage = () =>
 
 module.exports.randomTaskErrorMessage = () =>
   randomMessage(TASK_ERROR_MESSAGES)
+
+module.exports.randomThanksMessage = () =>
+  randomMessage(THANKS_MESSAGES)
+

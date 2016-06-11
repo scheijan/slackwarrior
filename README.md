@@ -8,7 +8,8 @@ Leveraging the powers of [Taskwarrior](http://taskwarrior.org) and [inthe.am](ht
 For detailed information on how to use his services check [the docs](http://slackwarrior.scheijan.net/doc.html).
 
 **Work in progress disclaimer:** 
-The bot is currently under development and you'll only be able to run it yourself (no Slackapp yet). 
+The bot is currently under development. Please report any bugs you find on our [Slack]
+(http://slackin.scheijan.net) or open an issue here on GitHub.
 
 ## Prerequisites ##
 Slackwarior is based on the awesome [botkit](https://github.com/howdyai/botkit) library for Slackbots.

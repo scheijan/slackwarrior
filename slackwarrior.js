@@ -27,20 +27,29 @@ let controller = Botkit.slackbot({
 controller.middleware.receive.use(dashbot.receive);
 controller.middleware.send.use(dashbot.send);
 
+// start a webserver to reply to Slack's OAuth
+// the port is taken from the environment valriable "port"
+controller.setupWebserver(process.env.port, (err) => {
+  if (!err) {
+    // create an endpoint for incoming webhooks (maybe needed later)
+    controller.createWebhookEndpoints(controller.webserver);
+    // create an endpoint for Slack's Oauth requests
+    controller.createOauthEndpoints(controller.webserver, (oauthErr, req, res) => {
+      if (oauthErr) {
+        res.status(500).send(`ERROR: ${oauthErr}`);
+      } else {
+        // redirect the user to the success page
+        res.redirect('http://slackwarrior.scheijan.net/success.html');
+      }
+    });
+  } else {
+    console.log('error setting up the webserver', err)
+  }
+});
+
+// make the controller available globally
 global.controller = controller;
 
-controller.setupWebserver(process.env.port, (err, webserver) => {
-  controller.createWebhookEndpoints(controller.webserver);
-
-  controller.createOauthEndpoints(controller.webserver, (oauthErr, req, res) => {
-    if (oauthErr) {
-      res.status(500).send(`ERROR: ${oauthErr}`);
-    } else {
-      res.redirect('http://slackwarrior.scheijan.net/success.html');
-    }
-  });
-})
-;
 // just a simple way to make sure we don't
 // connect to the RTM twice for the same team
 const bots = {};
@@ -48,19 +57,19 @@ function trackBot(bot) {
   bots[bot.config.token] = bot;
 }
 
+// this event is fired whenever the bot is installed on a new team
 controller.on('create_bot', (bot, config) => {
   if (bots[bot.config.token]) {
-    // already online! do nothing.
+    // already online, do nothing
   } else {
+    // start the bot for the new team
     bot.startRTM((err) => {
       if (!err) {
-        bot.botkit.log('new tem')
-        bot.botkit.log('config', config)
-
-        trackBot(bot);
+        // add the bot to our global list of registered bots
+        trackBot(bot)
+        // add methods to add and remove reactions to the bot
         bot = decorateBot(bot)
-      
-
+        // message the user who installed the bot with further instructions
         bot.startPrivateConversation({ user: config.createdBy }, (convErr, convo) => {
           if (convErr) {
             bot.botkit.log(convErr);
@@ -74,19 +83,21 @@ controller.on('create_bot', (bot, config) => {
   }
 });
 
+// loop over all registered teams and spawn a bot instance for each of them
 controller.storage.teams.all((err, teams) => {
   if (err) {
     throw new Error(err);
   }
-
-  // connect all teams with bots up to slack!
-  for (var t in teams) {
+  // connect all teams with bots up to slack
+  for (const t in teams) {
     if (teams[t].bot) {
       controller.spawn(teams[t]).startRTM((rtmErr, bot) => {
         if (rtmErr) {
           console.log('Error connecting bot to Slack:', rtmErr);
         } else {
-          trackBot(bot);
+          // add the bot to our global list of registered bots
+          trackBot(bot)
+          // add methods to add and remove reactions to the bot
           bot = decorateBot(bot)
         }
       });
@@ -110,6 +121,7 @@ controller.on('rtm_close', (b) => {
   b.botkit.log('Connection to RTM API closed.');
 });
 
+// decorate the bot with methods to add and remove reactions
 const decorateBot = (bot) => {
   const b = bot;
   // adds the given reaction to the given message

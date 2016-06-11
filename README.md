@@ -5,15 +5,14 @@
 
 Leveraging the powers of [Taskwarrior](http://taskwarrior.org) and [inthe.am](https://inthe.am) Slackwarrior can assist you managing your tasks on Slack.
 
-For detailed information on how to use his services check [the docs](http://slackwarrior.scheijan.net/doc.html)
+For detailed information on how to use his services check [the docs](http://slackwarrior.scheijan.net/doc.html).
 
 **Work in progress disclaimer:** 
 The bot is currently under development and you'll only be able to run it yourself (no Slackapp yet). 
 
 ## Prerequisites ##
-Slackwarior is based on the awesome [botkit](https://github.com/howdyai/botkit) library for Slackbot.
-He also makes use of [moment.js](https://momentjs.com) and [date.js](https://date.js.org) to provide human readable dates.
-And he uses [dashbot.io](https://dashbot.io) to learn more about the users' needs.
+Slackwarior is based on the awesome [botkit](https://github.com/howdyai/botkit) library for Slackbots.
+He also makes use of [moment.js](https://momentjs.com) and [date.js](https://date.js.org) to provide human readable dates. [Bluebird](https://bluebirdjs.com) is used for promises and he uses [dashbot.io](https://dashbot.io) to learn more about the users' needs.
 
 ## Setup ##
 Clone this repository and call
@@ -27,4 +26,4 @@ You will need two environment variables, one for your Slack API token (`token`) 
 
 ## Contributing ##
 Help is always welcome! If you are interested, please get in touch on our [Slack]
-(http://slackin.scheijan.net) 
+(http://slackin.scheijan.net).

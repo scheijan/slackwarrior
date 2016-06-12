@@ -198,8 +198,7 @@ const init = function (controller) {
   function helpTaskConvo(bot, message) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
-      dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`')
-      dm.say('You\'ll have to replace `23` with the `short_id` of the task you want to adress.')
+      dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`\nYou\'ll have to replace `23` with the `short_id` of the task you want to adress.')
       dm.say('You can find more information about my available commands and tasks in general at slackwarrior.scheijan.net/doc.html')
       dm.next()
     })
@@ -209,10 +208,8 @@ const init = function (controller) {
   function helpConvo(bot, message) {
     // bot.botkit.log('helpConvo', message)
     bot.startPrivateConversation(message, (err, dm) => {
-      dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!');
-      dm.say('I\'m Slackwarrior and I\'m here to help you manage your tasks.');
-      dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.');
-      dm.say('And also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
+      dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!\nI\'m Slackwarrior and I\'m here to help you manage your tasks.');
+      dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.\nAnd also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
       dm.say('I can talk with inthe.am and list your tasks, `add` new ones and mark them completed as you work through the list.');
 
       // at the end of the conversation
@@ -237,10 +234,8 @@ const init = function (controller) {
   function onboardingConvo(bot, message) {
     bot.startPrivateConversation(message, (err, convo) => {
       if (!err) {
-        convo.say('If you want me to help you managing your tasks, you\'ll first need an account at inthe.am')
-        convo.say('You can sign up with a google account and it\'s completely free! :free:')
-        convo.say('Once you have an account there I need your "token", you can find it on inthe.am/configure under "API Access"')
-        convo.say('slackwarrior.scheijan.net/apikey.png')
+        convo.say('If you want me to help you managing your tasks, you\'ll first need an account at inthe.am\nYou can sign up with a google account and it\'s completely free! :free:')
+        convo.say('Once you have an account there I need your "token", you can find it on inthe.am/configure under "API Access"\nslackwarrior.scheijan.net/apikey.png')
         convo.ask('Do you want me to add your token to my dossier now?', [
           {
             pattern: bot.botkit.utterances.yes,
@@ -354,6 +349,12 @@ const init = function (controller) {
   controller.hears(['thanks', 'thank you', 'thankful', 'grateful', 'gratitude'], 'direct_message,direct_mention,mention', (bot, message) => {
     bot.reply(message, messages.randomThanksMessage())
   })
+
+   // reply if a greets the bot
+  controller.hears(['hi', 'hello', 'hey', 'good morning', 'good evening', 'greetings'], 'direct_message,direct_mention,mention', (bot, message) => {
+    bot.reply(message, messages.randomGreetMessage())
+  })
+
 
   // slackwarrior is always hard at work
   controller.hears(['hard at work'], 'direct_message,direct_mention,mention', (bot, message) => {

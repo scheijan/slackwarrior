@@ -20,9 +20,9 @@ Clone this repository and call
 to install all necessary node modules.
 
 ## Operation ##
-You will need two environment variables, one for your Slack API token (`token`) and one for your [dashbot.io](https://dashbot.io) API key (`DASHBOT_API_KEY`). So to start the bot you can use something like 
+You will need four environment variables, one for your Slack `clientId`, one for your Slack `clientSecret`, one for your [dashbot.io](https://dashbot.io) API key (`DASHBOT_API_KEY`) and another one for the `port` you want to use for OAuth. So to start the bot you can use something like 
 
-```DASHBOT_API_KEY=AbCdEfGhIjKlMnOpQrStUvWxYz01234567890235 token=asdf-01234567890-aBcDeFgHiJkLmNoPqRsTuVwX node slackwarrior.js```
+```clientId=01234567890.01234567890 clientSecret=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6 port=23232 DASHBOT_API_KEY=AbCdEfGhIjKlMnOpQrStUvWxYz01234567890235 node slackwarrior.js```
 
 ## Contributing ##
 Help is always welcome! If you are interested, please get in touch on our [Slack]

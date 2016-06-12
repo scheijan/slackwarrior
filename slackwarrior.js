@@ -74,7 +74,7 @@ controller.on('create_bot', (bot, config) => {
           if (convErr) {
             bot.botkit.log(convErr);
           } else {
-            convo.say('I am Slackwarrior and I have just joined your team');
+            convo.say('I am Slackwarrior and I have just joined your team - thank you for the invitation!');
             convo.say('You can now /invite me to a channel so that I can be of use. If you ask me to introduce myself there, I will announce my presence and some basic usage info.');
           }
         });

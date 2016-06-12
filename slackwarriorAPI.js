@@ -55,11 +55,15 @@ function apiRequest(bot, message, settings, cb) {
     // malformed request, see error details
     } else if (rc === 400) {
       bot.reply(message, 'I\'m sorry, but it looks like inthe.am had some trouble with that :confused:')
-      bot.reply(message, 'Maybe their message(s) can help you narrowing it down?')
-      for (var prop in body) {
-        if (body.hasOwnProperty(prop)) {
-          bot.reply(message, `\`${prop}\` : ${body[prop].join(' ')}`)
+      try {
+        bot.reply(message, 'Maybe their message(s) can help you narrowing it down?')
+        for (var prop in body) {
+          if (body.hasOwnProperty(prop)) {
+            bot.reply(message, `\`${prop}\` : ${body[prop].join(' ')}`)
+          }
         }
+      } catch (innerErr) {
+        bot.botkit.log('error providing details from inthe.am', innerErr)
       }
     // entity does not exist
     } else if (rc === 404) {

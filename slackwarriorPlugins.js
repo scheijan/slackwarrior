@@ -210,7 +210,6 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!\nI\'m Slackwarrior and I\'m here to help you manage your tasks.');
       dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.\nAnd also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
-      dm.say('I can talk with inthe.am and list your tasks, `add` new ones and mark them completed as you work through the list.');
 
       // at the end of the conversation
       dm.on('end', () => {

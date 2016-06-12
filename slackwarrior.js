@@ -28,7 +28,7 @@ controller.middleware.receive.use(dashbot.receive);
 controller.middleware.send.use(dashbot.send);
 
 // start a webserver to reply to Slack's OAuth
-// the port is taken from the environment valriable "port"
+// the port is taken from the environment variable "port"
 controller.setupWebserver(process.env.port, (err) => {
   if (!err) {
     // create an endpoint for incoming webhooks (maybe needed later)
@@ -88,7 +88,7 @@ controller.storage.teams.all((err, teams) => {
   if (err) {
     throw new Error(err);
   }
-  // connect all teams with bots up to slack
+  // connect all teams with bots up to Slack
   for (const t in teams) {
     if (teams[t].bot) {
       controller.spawn(teams[t]).startRTM((rtmErr, bot) => {

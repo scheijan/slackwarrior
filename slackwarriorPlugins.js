@@ -182,7 +182,12 @@ const init = function (controller) {
             // if the conversation did not end with the user adding a new token
             convo.on('end', (econvo) => {
               if (econvo.status === 'stopped') {
-                bot.reply(message, 'Alright, as you wish. If you want to change your `token` later just tell me and please feel free to ask me for `help` at any time :robot_face:');
+                const answer = { channel: message.user, text: 'Alright, as you wish. If you want to change your `token` later just tell me and please feel free to ask me for `help` at any time :robot_face:', as_user: true }
+                bot.api.chat.postMessage(answer, (postErr) => {
+                  if (postErr) {
+                    bot.botkit.log('error posting reply', postErr)
+                  }
+                })
               }
             })
           }
@@ -264,7 +269,13 @@ const init = function (controller) {
         convo.on('end', (innerConvo) => {
           bot.botkit.log('status', innerConvo.status)
           if (innerConvo.status === 'stopped') {
-            bot.reply(message, 'Alright, as you wish. Just tell me once you have your token, so we can begin working on your tasks.');
+            bot.botkit.log('im if')
+            const answer = { channel: message.user, text: 'Alright, as you wish. Please tell me once you have your token, so we can begin working on your tasks.', as_user: true }
+            bot.api.chat.postMessage(answer, (postErr) => {
+              if (postErr) {
+                bot.botkit.log('error posting reply', postErr)
+              }
+            })
           }
         })
       } else {

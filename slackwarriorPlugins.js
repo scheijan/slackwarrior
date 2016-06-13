@@ -91,7 +91,7 @@ const init = function (controller) {
           id: message.user,
         }
       }
-      // if the user already has a inthe.am token saved in local storage
+      // if the user already has an inthe.am token saved in local storage
       if (user.token && user.token !== '') {
         bot.startPrivateConversation(message, (priverr, convo) => {
           if (!priverr) {
@@ -360,7 +360,7 @@ const init = function (controller) {
     bot.reply(message, messages.randomThanksMessage())
   })
 
-   // reply if a greets the bot
+   // reply if a user greets the bot
   controller.hears(['hi', 'hello', 'hey', 'good morning', 'good evening', 'greetings'], 'direct_message,direct_mention,mention', (bot, message) => {
     bot.reply(message, messages.randomGreetMessage())
   })

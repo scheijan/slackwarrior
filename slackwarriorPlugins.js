@@ -204,7 +204,7 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
       dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`\nYou\'ll have to replace `23` with the `short_id` of the task you want to adress.')
-      dm.say('You can find more information about my available commands and tasks in general at slackwarrior.scheijan.net/doc.html')
+      dm.say('You can find more information about my available commands and tasks in general at slackwarrior.org/doc.html')
       dm.next()
     })
   }
@@ -239,7 +239,7 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, convo) => {
       if (!err) {
         convo.say('If you want me to help you managing your tasks, you\'ll first need an account at inthe.am\nYou can sign up with a google account and it\'s completely free! :free:')
-        convo.say('Once you have an account there I need your "token", you can find it on inthe.am/configure under "API Access"\nslackwarrior.scheijan.net/apikey.png')
+        convo.say('Once you have an account there I need your "token", you can find it on inthe.am/configure under "API Access"\nslackwarrior.org/apikey.png')
         convo.ask('Do you want me to add your token to my dossier now?', [
           {
             pattern: bot.botkit.utterances.yes,

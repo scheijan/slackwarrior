@@ -5,7 +5,7 @@
 
 Leveraging the powers of [Taskwarrior](http://taskwarrior.org) and [inthe.am](https://inthe.am) Slackwarrior can assist you managing your tasks on Slack.
 
-For detailed information on how to use his services check [the docs](http://slackwarrior.scheijan.net/doc.html).
+For detailed information on how to use his services check [the docs](http://slackwarrior.org/doc.html).
 
 **Work in progress disclaimer:** 
 The bot is currently under development. If you encounter any problems, find a bug or have any suggestions or feature requests, please tell us on our [Slack](http://slackin.scheijan.net) or open an issue here on GitHub.

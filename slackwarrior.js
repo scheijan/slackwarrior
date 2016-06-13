@@ -39,7 +39,7 @@ controller.setupWebserver(process.env.port, (err) => {
         res.status(500).send(`ERROR: ${oauthErr}`);
       } else {
         // redirect the user to the success page
-        res.redirect('http://slackwarrior.scheijan.net/success.html');
+        res.redirect('http://slackwarrior.org/success.html');
       }
     });
   } else {

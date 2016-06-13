@@ -56,7 +56,7 @@ const resolveModifierShorthand = (m) => {
   return modifiers[modifier];
 }
 
-// reolve a value for the field "priority" (incl. all possible shorthand versions)
+// resolve a value for the field "priority" (incl. all possible shorthand versions)
 const resolvePriority = (p) => {
   const prio = p.toLowerCase()
   if (prio === 'h' || prio === 'hi' || prio === 'hig' || prio === 'high') {
@@ -67,7 +67,7 @@ const resolvePriority = (p) => {
   return 'L'
 }
 
-// reolve a value for the field status (incl. all possible shorthand versions)
+// resolve a value for the field status (incl. all possible shorthand versions)
 const resolveStatus = (status) => {
   let result = 'pending';
   const statusKeys = {
@@ -285,7 +285,7 @@ const task2details = (task) => {
   return attachment
 }
 
-// convert a command line (from adding or modifying tasks) into a task object
+// convert a commandline (from adding or modifying tasks) into a task object
 const cl2task = (cl, oldTask, annotation) => {
   let commandLine = cl;
   // initialize a task object with default priority = 'L'
@@ -307,14 +307,14 @@ const cl2task = (cl, oldTask, annotation) => {
   // replace all whitespace characters which are not quoted with a special squence
   commandLine = commandLine.replace(REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED, '__|__')
 
-  // split the command line into tokens
+  // split the commandline into tokens
   const tokens = commandLine.split('__|__')
-  // empty array for text in the command line - could be description or annotation
+  // empty array for text in the commandline - could be description or annotation
   const descriptionParts = []
 
   for (let i = 0; i < tokens.length; i++) {
     let token = tokens[i];
-    // if it was a modifier replace the first colon with a special sequence
+    // if it was a modifier, replace the first colon with a special sequence
     token = token.replace(REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED, '__|__')
     // split into key and value
     if (token.indexOf('__|__') > -1) {
@@ -324,7 +324,7 @@ const cl2task = (cl, oldTask, annotation) => {
       // try to resolve the key if it was a shorthand version
       key = resolveModifierShorthand(key);
 
-      // if the value was quotes, remove the quotes here
+      // if the value was in quotes, remove the quotes here
       if (value.indexOf('"') > -1) {
         value = value.replace('"', '')
       }
@@ -363,7 +363,7 @@ const cl2task = (cl, oldTask, annotation) => {
       if (index > -1) {
         result.tags.splice(index, 1);
       }
-    // if it was none of the above we're creating a new task and this part of the description or annotation
+    // if it was none of the above, we're creating a new task and add this part of the description or annotation
     } else {
       descriptionParts.push(token)
     }

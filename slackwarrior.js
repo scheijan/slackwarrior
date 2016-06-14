@@ -108,10 +108,6 @@ controller.storage.teams.all((err, teams) => {
 // this is fired whenever we connect to the RTM API
 controller.on('rtm_open', (b) => {
   b.botkit.log('Connection to RTM API sucessfull.');
-  // add all channels to global variable channels and update storage.channels
-  controller.initChannels(b);
-  // add all users to global variable users and update storage.users
-  controller.initUsers(b);
 });
 
 

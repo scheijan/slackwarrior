@@ -35,8 +35,8 @@ if (typeof(String.prototype.replaceAll) === 'undefined') {
   };
 }
 
-const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
-const REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/
+const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"”]*["”]+[^"”]*["”]+)*[^"”]*$)/g
+const REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"”]*["”]+[^"”]*["”]+)*[^"”]*$)/
 
 // resolve a modifier name (incl. all possible shorthand versions)
 const resolveModifierShorthand = (m) => {

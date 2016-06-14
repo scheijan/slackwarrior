@@ -350,14 +350,22 @@ const cl2task = (cl, oldTask, annotation) => {
 
     // if we're adding a tag
     } else if (token.startsWith('+')) {
-      const tag = token.split('+')[1]
+      let tag = token.split('+')[1]
+      // if the tag was in quotes, remove the quotes here
+      if (tag.indexOf('"') > -1) {
+        tag = tag.replace('"', '')
+      }
       // if the tag is not already in the list of tags
       if (result.tags.indexOf(tag) === -1) {
         result.tags.push(tag)
       }
     // if we're removing a tag
     } else if (token.startsWith('-')) {
-      const tag = token.split('-')[1]
+      let tag = token.split('-')[1]
+      // if the tag was in quotes, remove the quotes here
+      if (tag.indexOf('"') > -1) {
+        tag = tag.replace('"', '')
+      }
       const index = result.tags.indexOf(tag)
       // if the tag is in the list, remove it
       if (index > -1) {

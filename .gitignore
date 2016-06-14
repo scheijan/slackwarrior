@@ -15,6 +15,6 @@ node_modules
 .npm
 
 jsondb
-*_jsondb
+*_jsondb*
 *.bak
 start*.sh

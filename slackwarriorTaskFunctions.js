@@ -9,13 +9,14 @@ if (typeof(String.prototype.trim) === 'undefined') {
   };
 }
 
-// define a methog "padRight" on the String prototype
+// define a method "padRight" on the String prototype
 if (typeof(String.prototype.padRight) === 'undefined') {
   String.prototype.padRight = function (l, c) {
     return this + Array(l - this.length + 1).join(c || ' ')
   }
 }
-// define a methog "padLeft" on the String prototype
+
+// define a method "padLeft" on the String prototype
 if (typeof(String.prototype.padLeft) === 'undefined') {
   String.prototype.padLeft = function (l, c) {
     let str = this;
@@ -24,6 +25,14 @@ if (typeof(String.prototype.padLeft) === 'undefined') {
     }
     return str;
   }
+}
+
+// define a method "replaceAll" on the String prototype
+if (typeof(String.prototype.replaceAll) === 'undefined') {
+  String.prototype.replaceAll = function (search, replacement) {
+    const target = this;
+    return target.split(search).join(replacement);
+  };
 }
 
 const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
@@ -350,7 +359,7 @@ const cl2task = (cl, oldTask, annotation) => {
 
       // if the value was in quotes, remove the quotes here
       if (value.indexOf('"') > -1) {
-        value = value.replace('"', '')
+        value = value.replaceAll('"', '')
       }
       // special handling for "priority" which has some shorthand versions
       if (key === 'priority') {
@@ -377,7 +386,7 @@ const cl2task = (cl, oldTask, annotation) => {
       let tag = token.split('+')[1]
       // if the tag was in quotes, remove the quotes here
       if (tag.indexOf('"') > -1) {
-        tag = tag.replace('"', '')
+        tag = tag.replaceAll('"', '')
       }
       // if the tag is not already in the list of tags
       if (result.tags.indexOf(tag) === -1) {
@@ -388,7 +397,7 @@ const cl2task = (cl, oldTask, annotation) => {
       let tag = token.split('-')[1]
       // if the tag was in quotes, remove the quotes here
       if (tag.indexOf('"') > -1) {
-        tag = tag.replace('"', '')
+        tag = tag.replaceAll('"', '')
       }
       const index = result.tags.indexOf(tag)
       // if the tag is in the list, remove it

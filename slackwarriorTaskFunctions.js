@@ -361,7 +361,7 @@ const cl2task = (cl, oldTask, annotation) => {
 
       // try to resolve the key if it was a shorthand version
       key = resolveModifierShorthand(key);
-      
+
       // convert all special quotes to regular ones
       value = value.replaceAll('”', '"')
 
@@ -382,7 +382,13 @@ const cl2task = (cl, oldTask, annotation) => {
         descriptionParts.push(value)
       // in case of date values convert a given "human" date into a datetime object
       } else if (key === 'due' || key === 'wait' || key === 'start' || key === 'scheduled') {
-        value = datejs(value)
+        // try to convert the value into a JavaScript Date (e.g. for YYYY-MM-DD)
+        try {
+          value = new Date(value).toString()
+        // if that didn't work, try again with datejs
+        } catch (err) {
+          value = datejs(value)
+        }
         result[key] = value;
       // in any other case just add to the result
       } else {

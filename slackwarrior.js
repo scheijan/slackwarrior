@@ -125,27 +125,27 @@ controller.on('rtm_close', (b) => {
 const decorateBot = (bot) => {
   const b = bot;
   // adds the given reaction to the given message
-  b.addReaction = function (message, reaction) {
-    this.api.reactions.add({
+  b.addReaction = (message, reaction) => {
+    b.api.reactions.add({
       timestamp: message.ts,
       channel: message.channel,
       name: reaction,
-    }, function (err) {
+    }, err => {
       if (err) {
-        this.botkit.log('failed to add reaction `${reaction}`', err);
+        b.botkit.log('failed to add reaction `${reaction}`', err);
       }
     });
   }
 
   // removes the given reaction from the given message
-  b.removeReaction = function (message, reaction) {
-    this.api.reactions.remove({
+  b.removeReaction = (message, reaction) => {
+    b.api.reactions.remove({
       timestamp: message.ts,
       channel: message.channel,
       name: reaction,
-    }, function (err) {
+    }, err => {
       if (err) {
-        this.botkit.log(`failed to remove ${reaction} reaction`, err);
+        b.botkit.log(`failed to remove ${reaction} reaction`, err);
       }
     });
   }

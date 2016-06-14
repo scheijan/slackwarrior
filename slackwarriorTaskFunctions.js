@@ -35,8 +35,8 @@ if (typeof(String.prototype.replaceAll) === 'undefined') {
   };
 }
 
-const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"”]*["”]+[^"”]*["”]+)*[^"”]*$)/g
-const REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"”]*["”]+[^"”]*["”]+)*[^"”]*$)/
+const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
+const REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/
 
 // resolve a modifier name (incl. all possible shorthand versions)
 const resolveModifierShorthand = (m) => {
@@ -337,6 +337,8 @@ const cl2task = (cl, oldTask, annotation) => {
     result.tags = []
   }
 
+  // convert all special quotes to regular ones
+  commandLine = commandLine.replaceAll('”', '"')
   // replace all whitespace characters which are not quoted with a special squence
   commandLine = commandLine.replace(REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED, '__|__')
 
@@ -347,6 +349,9 @@ const cl2task = (cl, oldTask, annotation) => {
 
   for (let i = 0; i < tokens.length; i++) {
     let token = tokens[i];
+    // convert all special quotes to regular ones
+    token = token.replaceAll('”', '"')
+
     // if it was a modifier, replace the first colon with a special sequence
     token = token.replace(REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED, '__|__')
     // split into key and value
@@ -356,13 +361,12 @@ const cl2task = (cl, oldTask, annotation) => {
 
       // try to resolve the key if it was a shorthand version
       key = resolveModifierShorthand(key);
+      
+      // convert all special quotes to regular ones
+      value = value.replaceAll('”', '"')
 
       // if the value was in quotes, remove the quotes here
       if (value.indexOf('"') > -1) {
-        value = value.replaceAll('"', '')
-      }
-      // and again, if ” were used instead
-      if (value.indexOf('”') > -1) {
         value = value.replaceAll('"', '')
       }
       // special handling for "priority" which has some shorthand versions
@@ -388,12 +392,11 @@ const cl2task = (cl, oldTask, annotation) => {
     // if we're adding a tag
     } else if (token.startsWith('+')) {
       let tag = token.split('+')[1]
+      // convert all special quotes to regular ones
+      tag = tag.replaceAll('”', '"')
+
       // if the tag was in quotes, remove the quotes here
       if (tag.indexOf('"') > -1) {
-        tag = tag.replaceAll('"', '')
-      }
-      // and again, if ” were used instead
-      if (tag.indexOf('”') > -1) {
         tag = tag.replaceAll('"', '')
       }
       // if the tag is not already in the list of tags
@@ -403,12 +406,11 @@ const cl2task = (cl, oldTask, annotation) => {
     // if we're removing a tag
     } else if (token.startsWith('-')) {
       let tag = token.split('-')[1]
+      // convert all special quotes to regular ones
+      tag = tag.replaceAll('”', '"')
+
       // if the tag was in quotes, remove the quotes here
       if (tag.indexOf('"') > -1) {
-        tag = tag.replaceAll('"', '')
-      }
-      // and again, if ” were used instead
-      if (tag.indexOf('”') > -1) {
         tag = tag.replaceAll('"', '')
       }
       const index = result.tags.indexOf(tag)

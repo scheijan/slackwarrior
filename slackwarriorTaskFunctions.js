@@ -2,6 +2,30 @@
 const datejs = require('date.js');
 const moment = require('moment');
 
+// define a method "trim" on the String prototype
+if (typeof(String.prototype.trim) === 'undefined') {
+  String.prototype.trim = function () {
+    return String(this).replace(/^\s+|\s+$/g, '');
+  };
+}
+
+// define a methog "padRight" on the String prototype
+if (typeof(String.prototype.padRight) === 'undefined') {
+  String.prototype.padRight = function (l, c) {
+    return this + Array(l - this.length + 1).join(c || ' ')
+  }
+}
+// define a methog "padLeft" on the String prototype
+if (typeof(String.prototype.padLeft) === 'undefined') {
+  String.prototype.padLeft = function (l, c) {
+    let str = this;
+    while (str.length < l) {
+      str = c + str;
+    }
+    return str;
+  }
+}
+
 const REGEX_ALL_WHITESPACE_THAT_IS_NOT_QUOTED = /\s+(?=([^"]*"[^"]*")*[^"]*$)/g
 const REGEX_FIRST_COLON_THAT_IS_NOT_QUOTED = /:+(?=([^"]*"[^"]*")*[^"]*$)/
 

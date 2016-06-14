@@ -10,7 +10,6 @@ const Botkit = require('botkit');
 
 const dashbot = require('dashbot')(process.env.DASHBOT_API_KEY).slack;
 const slackwarrior = require('./slackwarriorPlugins');
-const controllerFunctions = require('./controllerFunctions')
 
 let controller = Botkit.slackbot({
   debug: false,
@@ -151,7 +150,5 @@ const decorateBot = (bot) => {
   }
   return b
 }
-
-controller = controllerFunctions.decorate(controller)
 
 slackwarrior.init(controller);

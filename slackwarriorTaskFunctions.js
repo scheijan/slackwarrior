@@ -361,6 +361,10 @@ const cl2task = (cl, oldTask, annotation) => {
       if (value.indexOf('"') > -1) {
         value = value.replaceAll('"', '')
       }
+      // and again, if ” were used instead
+      if (value.indexOf('”') > -1) {
+        value = value.replaceAll('"', '')
+      }
       // special handling for "priority" which has some shorthand versions
       if (key === 'priority') {
         value = resolvePriority(value)
@@ -388,6 +392,10 @@ const cl2task = (cl, oldTask, annotation) => {
       if (tag.indexOf('"') > -1) {
         tag = tag.replaceAll('"', '')
       }
+      // and again, if ” were used instead
+      if (tag.indexOf('”') > -1) {
+        tag = tag.replaceAll('"', '')
+      }
       // if the tag is not already in the list of tags
       if (result.tags.indexOf(tag) === -1) {
         result.tags.push(tag)
@@ -397,6 +405,10 @@ const cl2task = (cl, oldTask, annotation) => {
       let tag = token.split('-')[1]
       // if the tag was in quotes, remove the quotes here
       if (tag.indexOf('"') > -1) {
+        tag = tag.replaceAll('"', '')
+      }
+      // and again, if ” were used instead
+      if (tag.indexOf('”') > -1) {
         tag = tag.replaceAll('"', '')
       }
       const index = result.tags.indexOf(tag)

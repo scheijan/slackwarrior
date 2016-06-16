@@ -326,58 +326,6 @@ function addTask(bot, message, text) {
   });
 }
 
-// parse the user's command and add a task using the inthe.am API
-function modifyTask(bot, message, short_id, commandline, annotate) {
-  // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
-
-  const tokens = commandline.split(' ')
-  tokens.splice(0, 2)
-  const text = tokens.join(' ')
-
-
-  // get a list of all pending tasks
-  getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
-    // loop over all tasks...
-    for (let i = 0; i < tasks.length; i++) {
-      const task = tasks[i];
-
-      // if this is the task to start/stop
-      if (String(task.short_id) === String(short_id)) {
-        // create a task object from old task and the user input
-        const oldStatus = task.status
-        const newTask = taskFunctions.cl2task(text, task, annotate)
-        const newStatus = newTask.status
-        // get the token for the user
-        getIntheamToken(bot, message, message.user, (token) => {
-          const settings = prepareAPI(`tasks/${task.id}`, 'PUT', token);
-
-          settings.body = newTask;
-
-          // call the inthe.am API to add the new task
-          apiRequest(bot, message, settings, (apiErr, apiResponse, body) => {
-            // remove the reaction again
-            bot.removeReaction(message, 'thinking_face')
-
-            bot.botkit.log('changed task', message.user);
-
-            let answerText = `Alright, I've changed task ${body.short_id} for you.`
-            if (oldStatus !== 'completed' && newStatus === 'completed') {
-              answerText = `Ok, task ${short_id} has been marked as complete - well done!`
-              if (tasks.length - 1 === 0) {
-                answerText = `${answerText} That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:`
-              } else {
-                answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
-              }
-            }
-            bot.reply(message, { text: answerText })
-          })
-        });
-      }
-    }
-  })
-}
-
 // mark as task as completed using the inthe.am API
 function completeTask(bot, message, short_id) {
   // add a reaction so the user knows we're working on it
@@ -425,6 +373,52 @@ function completeTask(bot, message, short_id) {
             }
           })
         });
+      }
+    }
+  })
+}
+
+// parse the user's command and add a task using the inthe.am API
+function modifyTask(bot, message, short_id, commandline, annotate) {
+  // add a reaction so the user knows we're working on it
+  bot.addReaction(message, 'thinking_face')
+
+  const tokens = commandline.split(' ')
+  tokens.splice(0, 2)
+  const text = tokens.join(' ')
+
+  // get a list of all pending tasks
+  getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
+    // loop over all tasks...
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+
+      // if this is the task to start/stop
+      if (String(task.short_id) === String(short_id)) {
+        // create a task object from old task and the user input
+        const oldStatus = task.status
+        const newTask = taskFunctions.cl2task(text, task, annotate)
+        const newStatus = newTask.status
+        if (oldStatus !== 'completed' && newStatus === 'completed') {
+          completeTask(bot, message, task.short_id)
+        } else {
+        // get the token for the user
+          getIntheamToken(bot, message, message.user, (token) => {
+            const settings = prepareAPI(`tasks/${task.id}`, 'PUT', token);
+
+            settings.body = newTask;
+
+            // call the inthe.am API to add the new task
+            apiRequest(bot, message, settings, (apiErr, apiResponse, body) => {
+              // remove the reaction again
+              bot.removeReaction(message, 'thinking_face')
+
+              bot.botkit.log('changed task', message.user);
+              const answerText = `Alright, I've changed task ${body.short_id} for you.`
+              bot.reply(message, { text: answerText })
+            })
+          });
+        }
       }
     }
   })

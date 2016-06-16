@@ -143,10 +143,10 @@ function sendAllTasks(bot, message) {
     // remove the thinking face again
     bot.removeReaction(message, 'thinking_face')
 
-    // sort list of tasks by urgency
     const tasks = body;
 
     if (tasks && tasks.length && tasks.length > 0) {
+      // sort list of tasks by urgency
       tasks.sort(compareTasks);
       const l = tasks.length;
       bot.botkit.log(`got ${l} tasks for user ${message.user}`);
@@ -197,7 +197,11 @@ function sendAllTasks(bot, message) {
           bot.reply(message, 'There was some problem uploading the tasks file')
           bot.reply(message, messages.randomErrorMessage())
         } else {
-          bot.reply(message, `These are your ${l} pending tasks, sorted by urgency :notebook:`)
+          let plural = 's'
+          if (l === 1) {
+            plural = ''
+          }
+          bot.reply(message, `These are your ${l} pending task${plural}, sorted by urgency :notebook:`)
         }
       })
     } else {
@@ -222,9 +226,12 @@ function sendTasks(bot, message) {
       const l = tasks.length;
       bot.botkit.log(`got ${l} tasks for user ${message.user}`);
 
-      //
-      let pretext = `:notebook: You have ${tasks.length} pending tasks right now`;
-      if (l >= 2) {
+      let plural = 's'
+      if (l === 1) {
+        plural = ''
+      }
+      let pretext = `:notebook: You have ${l} pending task${plural} right now`;
+      if (l > 3) {
         pretext = `${pretext}, here are the top 3: `
       } else {
         pretext = `${pretext}:`
@@ -238,17 +245,13 @@ function sendTasks(bot, message) {
 
       // limit tasks to 3
       let maxTasks = l;
-      if (l >= 2) {
-        maxTasks = 2;
-      }
-
-      if (l < 3) {
-        maxTasks = l - 1;
+      if (l > 3) {
+        maxTasks = 3;
       }
 
       // create a list of attachments, one per task
       const attachments = [];
-      for (let i = 0; i <= maxTasks; i++) {
+      for (let i = 0; i < maxTasks; i++) {
         const task = tasks[i];
 
         // create a message attachment from this task

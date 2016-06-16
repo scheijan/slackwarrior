@@ -141,7 +141,7 @@ const resolveStatus = (status) => {
     result = statusKeys[status]
   }
 
-  return status
+  return result
 }
 
 // converts a single task into a Slack message attachment

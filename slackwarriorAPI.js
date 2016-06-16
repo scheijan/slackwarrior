@@ -345,8 +345,9 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
       // if this is the task to start/stop
       if (String(task.short_id) === String(short_id)) {
         // create a task object from old task and the user input
+        const oldStatus = task.status
         const newTask = taskFunctions.cl2task(text, task, annotate)
-
+        const newStatus = newTask.status
         // get the token for the user
         getIntheamToken(bot, message, message.user, (token) => {
           const settings = prepareAPI(`tasks/${task.id}`, 'PUT', token);
@@ -360,7 +361,15 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
 
             bot.botkit.log('changed task', message.user);
 
-            const answerText = `Alright, I've changed task ${body.short_id} for you.`
+            let answerText = `Alright, I've changed task ${body.short_id} for you.`
+            if (oldStatus !== 'completed' && newStatus === 'completed') {
+              answerText = `Ok, task ${short_id} has been marked as complete - well done!`
+              if (tasks.length - 1 === 0) {
+                answerText = `${answerText} That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:`
+              } else {
+                answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
+              }
+            }
             bot.reply(message, { text: answerText })
           })
         });

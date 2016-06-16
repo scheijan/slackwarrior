@@ -371,6 +371,11 @@ const init = function (controller) {
     bot.reply(message, 'http://tinyurl.com/craftybot-gif')
   })
 
+  // slackwarrior is always hard at work
+  controller.hears(['(╯°□°）╯︵ ┻━┻'], 'ambient', (bot, message) => {
+    bot.reply(message, ' ┬─┬ノ( º _ ºノ) \nHere, let me clean that up for you...')
+  })
+
   // handle reactions added to the bot's messages
   controller.on('reaction_added', (bot, message) => {
     if (message.item_user === bot.identity.id && message.user !== bot.identity.id) {

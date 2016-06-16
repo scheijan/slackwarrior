@@ -102,7 +102,7 @@ const resolvePriority = (p) => {
 
 // resolve a value for the field status (incl. all possible shorthand versions)
 const resolveStatus = (status) => {
-  let result = 'pending';
+  let result = status.toLowerCase()
   const statusKeys = {
     pending: 'pending',
     pendin: 'pending',
@@ -136,9 +136,8 @@ const resolveStatus = (status) => {
     d: 'deleted',
   }
 
-  result = status.toLowerCase()
   if (statusKeys[result]) {
-    result = statusKeys[status]
+    result = statusKeys[result]
   }
 
   return result

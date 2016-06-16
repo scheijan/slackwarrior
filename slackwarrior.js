@@ -90,14 +90,16 @@ controller.storage.teams.all((err, teams) => {
   // connect all teams with bots up to Slack
   for (const t in teams) {
     if (teams[t].bot) {
+      teams[t].retry = 'Infinity'
       controller.spawn(teams[t]).startRTM((rtmErr, bot) => {
+        let b = bot;
         if (rtmErr) {
           console.log('Error connecting bot to Slack:', rtmErr);
         } else {
           // add the bot to our global list of registered bots
           trackBot(bot)
           // add methods to add and remove reactions to the bot
-          bot = decorateBot(bot)
+          b = decorateBot(b)
         }
       });
     }

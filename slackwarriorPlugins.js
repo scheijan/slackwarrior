@@ -291,7 +291,7 @@ const init = function (controller) {
     const lcText = message.text.toLowerCase();
     // task add
     if (lcText.indexOf('task add ') > -1) {
-      text = text.split('task add ')[1]
+      text = text.substring(9, text.length)
       if (text && text.length > 0) {
         api.addTask(bot, message, text)
       } else {

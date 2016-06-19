@@ -204,7 +204,7 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
       dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`\nYou\'ll have to replace `23` with the `short_id` of the task you want to adress.')
-      dm.say('You can find more information about my available commands and tasks in general at slackwarrior.org/doc.html')
+      dm.say('You can find more information about my available commands and tasks in general at https://slackwarrior.org/doc.html')
       dm.next()
     })
   }
@@ -369,11 +369,6 @@ const init = function (controller) {
   // slackwarrior is always hard at work
   controller.hears(['hard at work'], 'direct_message,direct_mention,mention', (bot, message) => {
     bot.reply(message, 'http://tinyurl.com/craftybot-gif')
-  })
-
-  // slackwarrior is always hard at work
-  controller.hears(['(╯°□°）╯︵ ┻━┻'], 'ambient', (bot, message) => {
-    bot.reply(message, ' ┬─┬ノ( º _ ºノ) \nHere, let me clean that up for you...')
   })
 
   // handle reactions added to the bot's messages

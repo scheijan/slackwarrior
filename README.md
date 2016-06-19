@@ -2,6 +2,7 @@
 
 [![Slack Status](https://slackin.slackwarrior.org/badge.svg)](https://slackin.slackwarrior.org)
 [![Join the chat at https://gitter.im/scheijan/slackwarrior](https://badges.gitter.im/scheijan/slackwarrior.svg)](https://gitter.im/scheijan/slackwarrior?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![dependency status](https://david-dm.org/scheijan/slackwarrior.svg)](https://david-dm.org/scheijan/slackwarrior.svg)
 
 Leveraging the powers of [Taskwarrior](http://taskwarrior.org) and [inthe.am](https://inthe.am), Slackwarrior can assist you managing your tasks on Slack.
 

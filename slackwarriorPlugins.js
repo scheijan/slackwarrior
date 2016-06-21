@@ -387,6 +387,16 @@ const init = function (controller) {
       }
     }
   })
+
+  // receive an interactive message, and reply with a message that will replace the original
+  controller.on('interactive_message_callback', (bot, message) => {
+    // check message.actions and message.callback_id to see what action to take...
+    if (message.callback_id.indexOf('done_') > -1) {
+      const short_id = message.callback_id.split('_')[1]
+      
+    }
+    bot.replyInteractive(message, {})
+  })
 }
 
 exports.init = init;

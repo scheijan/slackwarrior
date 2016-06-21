@@ -366,7 +366,13 @@ function completeTask(bot, message, short_id) {
             } else {
               answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
             }
-            bot.reply(message, answerText)
+            // if the message origin was a user clicking on a button, reply interactively to replace the original message
+            if (message.callback_id) {
+              bot.replyInteractive(message, answerText)
+            } else {
+              bot.reply(message, answerText)
+            }
+
             // if the completed task was not the one with the highest urgency
             if (completedUrgency < highestUrgency) {
               bot.reply(message, messages.randomNotMostUrgendMessage())
@@ -492,6 +498,18 @@ function taskDetails(bot, message, short_id) {
         }
 
         const attachment = taskFunctions.task2details(task)
+        attachment.callback_id = `done_${short_id}`
+
+        const actions = [
+          {
+            name: 'done',
+            text: 'Done',
+            value: 'done',
+            type: 'button',
+          },
+        ]
+
+        attachment.actions = actions;
 
         answer.attachments = [attachment];
 

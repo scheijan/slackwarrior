@@ -549,5 +549,6 @@ function changeTask(bot, message, text) {
 
 module.exports.addTask = addTask;
 module.exports.changeTask = changeTask;
+module.exports.completeTask = completeTask;
 module.exports.sendTasks = sendTasks;
 module.exports.sendAllTasks = sendAllTasks;

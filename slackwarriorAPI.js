@@ -436,9 +436,11 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
 }
 
 // start or stop a task using the inthe.am API (depending on param "mode")
-function startStopTask(bot, message, short_id, mode) {
+function startStopTask(bot, message, short_id, mode, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
@@ -449,10 +451,14 @@ function startStopTask(bot, message, short_id, mode) {
       // if this is the task to start/stop
       if (String(task.short_id) === String(short_id)) {
         if (mode === 'start' && task.start) {
-          bot.removeReaction(message, 'thinking_face')
+          if (!fromButton) {
+            bot.removeReaction(message, 'thinking_face')
+          }
           bot.reply(message, `Hm, you've already started this task ${moment(task.start).fromNow()}. :confused:`)
         } else if (mode === 'stop' && !task.start) {
-          bot.removeReaction(message, 'thinking_face')
+          if (!fromButton) {
+            bot.removeReaction(message, 'thinking_face')
+          }
           bot.reply(message, 'Hm, I\'m sorry, but I can\'t really stop a task that hasn\'t been started yet. :confused:')
         } else {
           getIntheamToken(bot, message, message.user, (token) => {
@@ -460,9 +466,10 @@ function startStopTask(bot, message, short_id, mode) {
 
             // call the inthe.am API and mark the task as started or stopped
             apiRequest(bot, message, settings, () => {
-              // remove the thinking_face reaction again
-              bot.removeReaction(message, 'thinking_face')
-
+              if (!fromButton) {
+                // remove the thinking_face reaction again
+                bot.removeReaction(message, 'thinking_face')
+              }
               bot.botkit.log(`${mode}ed task ${short_id} for user ${message.user}`);
               let answerText = 'Ok, I have '
               if (mode === 'start') {
@@ -503,7 +510,7 @@ function taskDetails(bot, message, short_id) {
         }
 
         const attachment = taskFunctions.task2details(task)
-        attachment.callback_id = `done_${short_id}`
+        attachment.callback_id = short_id
 
         const actions = [
           {
@@ -513,6 +520,21 @@ function taskDetails(bot, message, short_id) {
             type: 'button',
           },
         ]
+
+        const startStopButton = {
+          type: 'button',
+        }
+        if (task.start) {
+          startStopButton.name = 'stop'
+          startStopButton.value = 'stop'
+          startStopButton.tex = 'Stop'
+        } else {
+          startStopButton.name = 'start'
+          startStopButton.value = 'start'
+          startStopButton.tex = 'Start'
+        }
+
+        actions.push(startStopButton)
 
         attachment.actions = actions;
 
@@ -554,6 +576,7 @@ function changeTask(bot, message, text) {
 
 module.exports.addTask = addTask;
 module.exports.changeTask = changeTask;
+module.exports.startStopTask = startStopTask;
 module.exports.completeTask = completeTask;
 module.exports.sendTasks = sendTasks;
 module.exports.sendAllTasks = sendAllTasks;

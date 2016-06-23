@@ -390,10 +390,15 @@ const init = function (controller) {
 
   // receive an interactive message, and reply with a message that will replace the original
   controller.on('interactive_message_callback', (bot, message) => {
+    const short_id = message.callback_id
+    const command = message.actions[0].name
     // check message.actions and message.callback_id to see what action to take...
-    if (message.callback_id.indexOf('done_') > -1) {
-      const short_id = message.callback_id.split('_')[1]
+    if (command === 'done') {
       api.completeTask(bot, message, short_id, true)
+    } else if (command === 'start') {
+      api.startStopTask(bot, message, short_id, 'start', true)
+    } else if (command === 'stop') {
+      api.startStopTask(bot, message, short_id, 'stop', true)
     }
   })
 }

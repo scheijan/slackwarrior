@@ -327,9 +327,12 @@ function addTask(bot, message, text) {
 }
 
 // mark as task as completed using the inthe.am API
-function completeTask(bot, message, short_id) {
+function completeTask(bot, message, short_id, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
@@ -357,7 +360,9 @@ function completeTask(bot, message, short_id) {
           // call the inthe.am API and mark the task as complete
           apiRequest(bot, message, settings, () => {
             // remove the thinking_face reaction again
-            bot.removeReaction(message, 'thinking_face')
+            if (!fromButton) {
+              bot.removeReaction(message, 'thinking_face')
+            }
 
             bot.botkit.log(`marked task ${short_id} for user ${message.user} as complete`);
             let answerText = `Ok, task ${short_id} has been marked as complete - well done!`
@@ -367,7 +372,7 @@ function completeTask(bot, message, short_id) {
               answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
             }
             // if the message origin was a user clicking on a button, reply interactively to replace the original message
-            if (message.callback_id) {
+            if (fromButton) {
               bot.replyInteractive(message, answerText)
             } else {
               bot.reply(message, answerText)

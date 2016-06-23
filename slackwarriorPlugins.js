@@ -393,7 +393,7 @@ const init = function (controller) {
     // check message.actions and message.callback_id to see what action to take...
     if (message.callback_id.indexOf('done_') > -1) {
       const short_id = message.callback_id.split('_')[1]
-      api.completeTask(bot, message, short_id)
+      api.completeTask(bot, message, short_id, true)
     }
   })
 }

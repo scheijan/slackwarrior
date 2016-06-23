@@ -471,15 +471,19 @@ function startStopTask(bot, message, short_id, mode, fromButton) {
                 bot.removeReaction(message, 'thinking_face')
               }
               bot.botkit.log(`${mode}ed task ${short_id} for user ${message.user}`);
-              let answerText = 'Ok, I have '
-              if (mode === 'start') {
-                answerText = `${answerText} started`
+              if (fromButton) {
+                taskDetails(bot, message, short_id, true)
               } else {
-                answerText = `${answerText} stopped`
-              }
-              answerText = `${answerText} the timer for task ${short_id} for you. :stopwatch:`;
+                let answerText = 'Ok, I have '
+                if (mode === 'start') {
+                  answerText = `${answerText} started`
+                } else {
+                  answerText = `${answerText} stopped`
+                }
+                answerText = `${answerText} the timer for task ${short_id} for you. :stopwatch:`;
 
-              bot.reply(message, answerText)
+                bot.reply(message, answerText)
+              }
             })
           });
         }
@@ -489,14 +493,18 @@ function startStopTask(bot, message, short_id, mode, fromButton) {
 }
 
 // get the details for the specified task
-function taskDetails(bot, message, short_id) {
+function taskDetails(bot, message, short_id, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
-    // remove the thinking_face reaction again
-    bot.removeReaction(message, 'thinking_face')
+    if (!fromButton) {
+      // remove the thinking_face reaction again
+      bot.removeReaction(message, 'thinking_face')
+    }
     // loop over all tasks...
     for (let i = 0; i < tasks.length; i++) {
       const task = tasks[i];
@@ -512,7 +520,7 @@ function taskDetails(bot, message, short_id) {
         const attachment = taskFunctions.task2details(task)
         attachment.callback_id = short_id
 
-        const actions = [
+        let actions = [
           {
             name: 'done',
             text: 'Done',
@@ -527,26 +535,23 @@ function taskDetails(bot, message, short_id) {
         if (task.start) {
           startStopButton.name = 'stop'
           startStopButton.value = 'stop'
-          startStopButton.tex = 'Stop'
+          startStopButton.text = 'Stop'
         } else {
           startStopButton.name = 'start'
           startStopButton.value = 'start'
-          startStopButton.tex = 'Start'
+          startStopButton.text = 'Start'
         }
-
         actions.push(startStopButton)
 
         attachment.actions = actions;
 
         answer.attachments = [attachment];
 
-        bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-          if (!postErr) {
-            bot.botkit.log('task details sent');
-          } else {
-            bot.botkit.log('error sending task details', postResponse, postErr);
-          }
-        })
+        if (fromButton) {
+          bot.replyInteractive(message, answer)
+        } else {
+          bot.reply(message, answer)
+        }
       }
     }
   })

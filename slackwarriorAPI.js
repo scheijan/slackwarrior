@@ -262,6 +262,24 @@ function sendTasks(bot, message) {
           attachment.pretext = pretext;
         }
 
+        const actions = [
+          {
+            name: 'done',
+            text: ':white_check_mark: Done',
+            value: 'done',
+            type: 'button',
+            style: 'primary',
+          },
+          {
+            name: 'details',
+            text: ':information_source: Details',
+            value: 'details',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = task.short_id
+
         attachments.push(attachment);
       }
 
@@ -523,9 +541,10 @@ function taskDetails(bot, message, short_id, fromButton) {
         let actions = [
           {
             name: 'done',
-            text: 'Done',
+            text: ':white_check_mark: Done',
             value: 'done',
             type: 'button',
+            style: 'primary',
           },
         ]
 
@@ -535,11 +554,11 @@ function taskDetails(bot, message, short_id, fromButton) {
         if (task.start) {
           startStopButton.name = 'stop'
           startStopButton.value = 'stop'
-          startStopButton.text = 'Stop'
+          startStopButton.text = ':stopwatch: Stop'
         } else {
           startStopButton.name = 'start'
           startStopButton.value = 'start'
-          startStopButton.text = 'Start'
+          startStopButton.text = ':stopwatch: Start'
         }
         actions.push(startStopButton)
 
@@ -583,5 +602,6 @@ module.exports.addTask = addTask;
 module.exports.changeTask = changeTask;
 module.exports.startStopTask = startStopTask;
 module.exports.completeTask = completeTask;
+module.exports.taskDetails = taskDetails;
 module.exports.sendTasks = sendTasks;
 module.exports.sendAllTasks = sendAllTasks;

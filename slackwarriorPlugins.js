@@ -399,6 +399,8 @@ const init = function (controller) {
       api.startStopTask(bot, message, short_id, 'start', true)
     } else if (command === 'stop') {
       api.startStopTask(bot, message, short_id, 'stop', true)
+    } else if (command === 'details') {
+      api.taskDetails(bot, message, short_id, true)
     }
   })
 }

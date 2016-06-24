@@ -51,12 +51,23 @@ const init = function (controller) {
                 let text = 'Got it. Your token is in my dossier and we can get started now.\n';
                 text = `${text}Why don't you try it out and add a task to your list? Maybe you need some milk? Try \`task add remember the milk\`\n`
                 text = `${text}And please feel to ask for \`task help\` at any time if you want me to remind you on how I can assist you with your tasks. :robot_face:`
-                const answer = { channel: message.channel, text, as_user: true }
-                bot.api.chat.postMessage(answer, (postErr, response) => {
-                  if (!postErr) {
-                    bot.addReaction(response, 'computer')
+                const answer = { channel: message.channel, as_user: true }
+                answer.attachments = [
+                  {
+                    pretext: text,
+                    mrkdwn_in: ['pretext'],
+                    callback_id: 'newtoken',
+                    actions: [
+                      {
+                        name: 'taskhelp',
+                        text: ':notebook: Task help',
+                        value: 'taskhelp',
+                        type: 'button',
+                      },
+                    ],
                   }
-                })
+                ]
+                bot.api.chat.postMessage(answer, (postErr, response) => {})
               } else {
                 bot.reply(message, messages.randomErrorMessage())
                 bot.botkit.log('error saving user token', saveErr)
@@ -64,11 +75,30 @@ const init = function (controller) {
             });
           // the convo did not end with status "completed"
           } else {
-            // this happens if the conversation ended prematurely for some reason
-            const answer = { channel: message.channel, text: 'Alright. If you want to try again please ask me about `onboarding` or just tap on the :computer:.', as_user: true }
-            bot.api.chat.postMessage(answer, (postErr, response) => {
-              if (!postErr) {
-                bot.addReaction(response, 'computer')
+            bot.botkit.log('XXXXXXXXXX')
+            const answer = {
+              channel: message.user,
+              as_user: true,
+              attachments: [
+                {
+                  pretext: 'Alright. If you want to try again please ask me about `onboarding` whenever you\'re ready.',
+                  mrkdwn_in: ['pretext'],
+                  callback_id: 'error',
+                  actions: [
+                    {
+                      name: 'onboarding',
+                      text: ':computer: Onboarding',
+                      value: 'onboarding',
+                      type: 'button',
+                    },
+                  ],
+                },
+              ],
+            }
+            bot.botkit.log('XXXXXXXXXX', answer)
+            bot.api.chat.postMessage(answer, (postErr) => {
+              if (postErr) {
+                bot.botkit.log('error posting reply', postErr)
               }
             })
           }
@@ -392,23 +422,6 @@ const init = function (controller) {
   // slackwarrior is always hard at work
   controller.hears(['hard at work'], 'direct_message,direct_mention,mention', (bot, message) => {
     bot.reply(message, 'http://tinyurl.com/craftybot-gif')
-  })
-
-  // handle reactions added to the bot's messages
-  controller.on('reaction_added', (bot, message) => {
-    if (message.item_user === bot.identity.id && message.user !== bot.identity.id) {
-      bot.botkit.log('user reaction_added to a bot message', message.reaction)
-      // if it was a grey question mark, start the general help conversation
-      if (message.reaction === 'grey_question') {
-        helpConvo(bot, { type: 'message', user: message.user })
-      // if it was a computer, start the onboarding help
-      } else if (message.reaction === 'computer') {
-        onboardingConvo(bot, { type: 'message', user: message.user })
-      // if it was a notebook, start the task help conversation
-      } else if (message.reaction === 'notebook') {
-        helpTaskConvo(bot, { type: 'message', user: message.user })
-      }
-    }
   })
 
   // receive an interactive message, and reply with a message that will replace the original

@@ -76,12 +76,24 @@ function apiRequest(bot, message, settings, cb) {
       bot.reply(message, 'I\'m sorry, but it looks like inthe.am is having some troubles right now. The error has been logged and the admins have been notified. Please try again in a little while.')
     // auth
     } else if (rc === 401 || rc === 403) {
-      const answer = { channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true }
-      bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-        if (!postErr) {
-          bot.addReaction(postResponse, 'computer')
-        }
-      })
+      const answer = {
+        attachments : [
+          {
+            pretext: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` any time.',
+            mrkdwn_in: ['pretext'],
+            callback_id: 'error',
+            actions : [
+              {
+                name: 'onboarding',
+                text: ':computer: Onboarding',
+                value: 'onboarding',
+                type: 'button',
+              },
+            ],
+          },
+        ],
+      }
+      bot.reply(message, answer)
     // success
     } else if (rc === 200 || rc === 201) {
       cb(err, response, body)

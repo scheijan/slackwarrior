@@ -301,9 +301,12 @@ const init = function (controller) {
     } else if (lcText.indexOf('task ') > -1 && /^-?\d+\.?\d*$/.test(lcText.split('task ')[1].split(' ')[0])) {
       text = text.substring(5, text.length)
       api.changeTask(bot, message, text)
+    // task all
+    } else if (lcText.indexOf('task all') > -1) {
+      api.sendAllTasks(bot, message);
     // task list
     } else if (lcText.indexOf('task list') > -1) {
-      api.sendAllTasks(bot, message);
+      api.sendTaskList(bot, message);
     // task
     } else if (lcText === 'task') {
       api.sendTasks(bot, message);
@@ -401,6 +404,10 @@ const init = function (controller) {
       api.startStopTask(bot, message, short_id, 'stop', true)
     } else if (command === 'details') {
       api.taskDetails(bot, message, short_id, true)
+    } else if (command === 'task') {
+      api.sendTasks(bot, message, true)
+    } else if (command === 'list') {
+      api.sendTaskList(bot, message, true)
     }
   })
 }

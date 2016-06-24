@@ -210,16 +210,19 @@ function sendAllTasks(bot, message) {
   })
 }
 
-// create a message (with attachments) and list the the user's three most urgent tasks
-function sendTasks(bot, message) {
+// create a message (with attachments) and list the the user's three most urgent tasks with details
+function sendTasks(bot, message, fromButton) {
   bot.botkit.log('getting tasks for user', message.user);
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   getTasks(bot, message, message.user, false, (err, response, tasks) => {
-    // remove the thinking face again
-    bot.removeReaction(message, 'thinking_face')
-
+    if (!fromButton) {
+      // remove the thinking face again
+      bot.removeReaction(message, 'thinking_face')
+    }
     // sort list of tasks by urgency
     if (tasks && tasks.length && tasks.length > 0) {
       tasks.sort(compareTasks);
@@ -285,13 +288,127 @@ function sendTasks(bot, message) {
 
       // add attachments to the message and send it
       answer.attachments = attachments;
-      bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-        if (!postErr) {
-          // bot.botkit.log('tasks sent');
-        } else {
-          bot.botkit.log('error sending tasks', postResponse, postErr);
+      if (fromButton) {
+        bot.replyInteractive(message, answer)
+      } else {
+        bot.reply(message, answer)
+      }
+     
+    } else {
+      bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
+    }
+  })
+}
+
+// create a message (with attachments) and list the the user's 20 most urgent tasks without details
+function sendTaskList(bot, message, fromButton) {
+  bot.botkit.log('getting tasks for user', message.user);
+  // add a reaction so the user knows we're working on it
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
+
+  getTasks(bot, message, message.user, false, (err, response, tasks) => {
+    if (!fromButton) {
+      // remove the thinking face again
+      bot.removeReaction(message, 'thinking_face')
+    }
+    // sort list of tasks by urgency
+    if (tasks && tasks.length && tasks.length > 0) {
+      tasks.sort(compareTasks);
+      const l = tasks.length;
+      bot.botkit.log(`got ${l} tasks for user ${message.user}`);
+
+      let plural = 's'
+      if (l === 1) {
+        plural = ''
+      }
+      let pretext = `:notebook: You have ${l} pending task${plural} right now`;
+      if (l > 20) {
+        pretext = `${pretext}, here are the top 20: `
+      } else {
+        pretext = `${pretext}:`
+      }
+
+      // basic settings for the result message
+      const answer = {
+        channel: message.channel,
+        as_user: true,
+      }
+
+      // limit tasks to 3
+      let maxTasks = l;
+      if (l > 20) {
+        maxTasks = 20;
+      }
+
+      // create a list of attachments, one per task
+      const attachments = [];
+      for (let i = 0; i < maxTasks; i++) {
+        const task = tasks[i];
+
+        // create a message attachment from this task
+        const attachment = {}
+
+        let title = `(<https://inthe.am/tasks/${task.id}|${task.short_id}>) ${task.description}`
+        if (task.start) {
+          title = `${title} (active)`
         }
-      })
+        attachment.title = title
+
+        // format entry- and modified-date
+        const entry = moment(task.entry)
+        const entryDiff = entry.fromNow()
+
+        const modified = moment(task.modified)
+        const modifiedDiff = modified.fromNow()
+
+        const text = `created ${entryDiff}, last modified ${modifiedDiff}`
+        attachment.text = text
+        
+
+        // set the color according to the priority of the task
+        if (task.priority === 'H') {
+          attachment.color = 'danger'
+        }
+        if (task.priority === 'M') {
+          attachment.color = 'warning'
+        }
+
+        // if this is the very first attachment we set the pretext
+        if (i === 0) {
+          attachment.pretext = pretext;
+        }
+
+        const actions = [
+          {
+            name: 'done',
+            text: ':white_check_mark: Done',
+            value: 'done',
+            type: 'button',
+            style: 'primary',
+          },
+          {
+            name: 'details',
+            text: ':information_source: Details',
+            value: 'details',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = task.short_id
+
+        attachments.push(attachment);
+      }
+
+      // add attachments to the message and send it
+      answer.attachments = attachments;
+      if (fromButton) {
+        bot.replyInteractive(message, answer)
+      } else {
+        bot.reply(message, answer)
+      }
+     
     } else {
       bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
     }
@@ -538,7 +655,7 @@ function taskDetails(bot, message, short_id, fromButton) {
         const attachment = taskFunctions.task2details(task)
         attachment.callback_id = short_id
 
-        let actions = [
+        const actions = [
           {
             name: 'done',
             text: ':white_check_mark: Done',
@@ -561,6 +678,20 @@ function taskDetails(bot, message, short_id, fromButton) {
           startStopButton.text = ':stopwatch: Start'
         }
         actions.push(startStopButton)
+
+        actions.push({
+          type: 'button',
+          name: 'task',
+          value: 'task',
+          text: ':exclamation: Top 3',
+        })
+
+        actions.push({
+          type: 'button',
+          name: 'list',
+          value: 'list',
+          text: ':notebook: List',
+        })        
 
         attachment.actions = actions;
 
@@ -605,3 +736,4 @@ module.exports.completeTask = completeTask;
 module.exports.taskDetails = taskDetails;
 module.exports.sendTasks = sendTasks;
 module.exports.sendAllTasks = sendAllTasks;
+module.exports.sendTaskList = sendTaskList;

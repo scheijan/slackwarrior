@@ -76,12 +76,24 @@ function apiRequest(bot, message, settings, cb) {
       bot.reply(message, 'I\'m sorry, but it looks like inthe.am is having some troubles right now. The error has been logged and the admins have been notified. Please try again in a little while.')
     // auth
     } else if (rc === 401 || rc === 403) {
-      const answer = { channel: message.channel, text: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` or just tap on the :computer: now.', as_user: true }
-      bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-        if (!postErr) {
-          bot.addReaction(postResponse, 'computer')
-        }
-      })
+      const answer = {
+        attachments : [
+          {
+            pretext: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` any time.',
+            mrkdwn_in: ['pretext'],
+            callback_id: 'error',
+            actions : [
+              {
+                name: 'onboarding',
+                text: ':computer: Onboarding',
+                value: 'onboarding',
+                type: 'button',
+              },
+            ],
+          },
+        ],
+      }
+      bot.reply(message, answer)
     // success
     } else if (rc === 200 || rc === 201) {
       cb(err, response, body)
@@ -210,16 +222,19 @@ function sendAllTasks(bot, message) {
   })
 }
 
-// create a message (with attachments) and list the the user's three most urgent tasks
-function sendTasks(bot, message) {
+// create a message (with attachments) and list the the user's three most urgent tasks with details
+function sendTasks(bot, message, fromButton) {
   bot.botkit.log('getting tasks for user', message.user);
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   getTasks(bot, message, message.user, false, (err, response, tasks) => {
-    // remove the thinking face again
-    bot.removeReaction(message, 'thinking_face')
-
+    if (!fromButton) {
+      // remove the thinking face again
+      bot.removeReaction(message, 'thinking_face')
+    }
     // sort list of tasks by urgency
     if (tasks && tasks.length && tasks.length > 0) {
       tasks.sort(compareTasks);
@@ -262,18 +277,149 @@ function sendTasks(bot, message) {
           attachment.pretext = pretext;
         }
 
+        const actions = [
+          {
+            name: 'done',
+            text: ':white_check_mark: Done',
+            value: 'done',
+            type: 'button',
+            style: 'primary',
+          },
+          {
+            name: 'details',
+            text: ':information_source: Details',
+            value: 'details',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = task.short_id
+
         attachments.push(attachment);
       }
 
       // add attachments to the message and send it
       answer.attachments = attachments;
-      bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-        if (!postErr) {
-          // bot.botkit.log('tasks sent');
-        } else {
-          bot.botkit.log('error sending tasks', postResponse, postErr);
+      if (fromButton) {
+        bot.replyInteractive(message, answer)
+      } else {
+        bot.reply(message, answer)
+      }
+     
+    } else {
+      bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
+    }
+  })
+}
+
+// create a message (with attachments) and list the the user's 20 most urgent tasks without details
+function sendTaskList(bot, message, fromButton) {
+  bot.botkit.log('getting tasks for user', message.user);
+  // add a reaction so the user knows we're working on it
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
+
+  getTasks(bot, message, message.user, false, (err, response, tasks) => {
+    if (!fromButton) {
+      // remove the thinking face again
+      bot.removeReaction(message, 'thinking_face')
+    }
+    // sort list of tasks by urgency
+    if (tasks && tasks.length && tasks.length > 0) {
+      tasks.sort(compareTasks);
+      const l = tasks.length;
+      bot.botkit.log(`got ${l} tasks for user ${message.user}`);
+
+      let plural = 's'
+      if (l === 1) {
+        plural = ''
+      }
+      let pretext = `:notebook: You have ${l} pending task${plural} right now`;
+      if (l > 20) {
+        pretext = `${pretext}, here are the top 20: `
+      } else {
+        pretext = `${pretext}:`
+      }
+
+      // basic settings for the result message
+      const answer = {
+        channel: message.channel,
+        as_user: true,
+      }
+
+      // limit tasks to 3
+      let maxTasks = l;
+      if (l > 20) {
+        maxTasks = 20;
+      }
+
+      // create a list of attachments, one per task
+      const attachments = [];
+      for (let i = 0; i < maxTasks; i++) {
+        const task = tasks[i];
+
+        // create a message attachment from this task
+        const attachment = {}
+
+        let title = `(<https://inthe.am/tasks/${task.id}|${task.short_id}>) ${task.description}`
+        if (task.start) {
+          title = `${title} (active)`
         }
-      })
+        attachment.title = title
+
+        // format entry- and modified-date
+        const entry = moment(task.entry)
+        const entryDiff = entry.fromNow()
+
+        const modified = moment(task.modified)
+        const modifiedDiff = modified.fromNow()
+
+        const text = `created ${entryDiff}, last modified ${modifiedDiff}`
+        attachment.text = text
+        
+
+        // set the color according to the priority of the task
+        if (task.priority === 'H') {
+          attachment.color = 'danger'
+        }
+        if (task.priority === 'M') {
+          attachment.color = 'warning'
+        }
+
+        // if this is the very first attachment we set the pretext
+        if (i === 0) {
+          attachment.pretext = pretext;
+        }
+
+        const actions = [
+          {
+            name: 'done',
+            text: ':white_check_mark: Done',
+            value: 'done',
+            type: 'button',
+            style: 'primary',
+          },
+          {
+            name: 'details',
+            text: ':information_source: Details',
+            value: 'details',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = task.short_id
+
+        attachments.push(attachment);
+      }
+
+      // add attachments to the message and send it
+      answer.attachments = attachments;
+      if (fromButton) {
+        bot.replyInteractive(message, answer)
+      } else {
+        bot.reply(message, answer)
+      }
     } else {
       bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
     }
@@ -327,9 +473,12 @@ function addTask(bot, message, text) {
 }
 
 // mark as task as completed using the inthe.am API
-function completeTask(bot, message, short_id) {
+function completeTask(bot, message, short_id, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
@@ -357,7 +506,9 @@ function completeTask(bot, message, short_id) {
           // call the inthe.am API and mark the task as complete
           apiRequest(bot, message, settings, () => {
             // remove the thinking_face reaction again
-            bot.removeReaction(message, 'thinking_face')
+            if (!fromButton) {
+              bot.removeReaction(message, 'thinking_face')
+            }
 
             bot.botkit.log(`marked task ${short_id} for user ${message.user} as complete`);
             let answerText = `Ok, task ${short_id} has been marked as complete - well done!`
@@ -366,11 +517,43 @@ function completeTask(bot, message, short_id) {
             } else {
               answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
             }
-            bot.reply(message, answerText)
+
             // if the completed task was not the one with the highest urgency
             if (completedUrgency < highestUrgency) {
-              bot.reply(message, messages.randomNotMostUrgendMessage())
+              answerText = `${answerText}\n${messages.randomNotMostUrgendMessage()}`
             }
+            const answer = {
+              attachments : [
+                {
+                  pretext: answerText,
+                  mrkdwn_in: ['pretext'],
+                  callback_id: 'completed',
+                  actions: [
+                    {
+                      type: 'button',
+                      name: 'task',
+                      value: 'task',
+                      text: ':exclamation: Top 3',
+                    },
+                    {
+                      type: 'button',
+                      name: 'list',
+                      value: 'list',
+                      text: ':notebook: List',
+                    }  
+                  ]
+                }
+              ]
+            }
+
+            // if the message origin was a user clicking on a button, reply interactively to replace the original message
+            if (fromButton) {
+              bot.replyInteractive(message, answer)
+            } else {
+              bot.reply(message, answer)
+            }
+
+            
           })
         });
       }
@@ -425,9 +608,11 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
 }
 
 // start or stop a task using the inthe.am API (depending on param "mode")
-function startStopTask(bot, message, short_id, mode) {
+function startStopTask(bot, message, short_id, mode, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
@@ -438,10 +623,14 @@ function startStopTask(bot, message, short_id, mode) {
       // if this is the task to start/stop
       if (String(task.short_id) === String(short_id)) {
         if (mode === 'start' && task.start) {
-          bot.removeReaction(message, 'thinking_face')
+          if (!fromButton) {
+            bot.removeReaction(message, 'thinking_face')
+          }
           bot.reply(message, `Hm, you've already started this task ${moment(task.start).fromNow()}. :confused:`)
         } else if (mode === 'stop' && !task.start) {
-          bot.removeReaction(message, 'thinking_face')
+          if (!fromButton) {
+            bot.removeReaction(message, 'thinking_face')
+          }
           bot.reply(message, 'Hm, I\'m sorry, but I can\'t really stop a task that hasn\'t been started yet. :confused:')
         } else {
           getIntheamToken(bot, message, message.user, (token) => {
@@ -449,19 +638,24 @@ function startStopTask(bot, message, short_id, mode) {
 
             // call the inthe.am API and mark the task as started or stopped
             apiRequest(bot, message, settings, () => {
-              // remove the thinking_face reaction again
-              bot.removeReaction(message, 'thinking_face')
-
-              bot.botkit.log(`${mode}ed task ${short_id} for user ${message.user}`);
-              let answerText = 'Ok, I have '
-              if (mode === 'start') {
-                answerText = `${answerText} started`
-              } else {
-                answerText = `${answerText} stopped`
+              if (!fromButton) {
+                // remove the thinking_face reaction again
+                bot.removeReaction(message, 'thinking_face')
               }
-              answerText = `${answerText} the timer for task ${short_id} for you. :stopwatch:`;
+              bot.botkit.log(`${mode}ed task ${short_id} for user ${message.user}`);
+              if (fromButton) {
+                taskDetails(bot, message, short_id, true)
+              } else {
+                let answerText = 'Ok, I have '
+                if (mode === 'start') {
+                  answerText = `${answerText} started`
+                } else {
+                  answerText = `${answerText} stopped`
+                }
+                answerText = `${answerText} the timer for task ${short_id} for you. :stopwatch:`;
 
-              bot.reply(message, answerText)
+                bot.reply(message, answerText)
+              }
             })
           });
         }
@@ -471,14 +665,18 @@ function startStopTask(bot, message, short_id, mode) {
 }
 
 // get the details for the specified task
-function taskDetails(bot, message, short_id) {
+function taskDetails(bot, message, short_id, fromButton) {
   // add a reaction so the user knows we're working on it
-  bot.addReaction(message, 'thinking_face')
+  if (!fromButton) {
+    bot.addReaction(message, 'thinking_face')
+  }
 
   // get a list of all pending tasks
   getTasks(bot, message, message.user, short_id, (err, response, tasks) => {
-    // remove the thinking_face reaction again
-    bot.removeReaction(message, 'thinking_face')
+    if (!fromButton) {
+      // remove the thinking_face reaction again
+      bot.removeReaction(message, 'thinking_face')
+    }
     // loop over all tasks...
     for (let i = 0; i < tasks.length; i++) {
       const task = tasks[i];
@@ -492,16 +690,55 @@ function taskDetails(bot, message, short_id) {
         }
 
         const attachment = taskFunctions.task2details(task)
+        attachment.callback_id = short_id
+
+        const actions = [
+          {
+            name: 'done',
+            text: ':white_check_mark: Done',
+            value: 'done',
+            type: 'button',
+            style: 'primary',
+          },
+        ]
+
+        const startStopButton = {
+          type: 'button',
+        }
+        if (task.start) {
+          startStopButton.name = 'stop'
+          startStopButton.value = 'stop'
+          startStopButton.text = ':stopwatch: Stop'
+        } else {
+          startStopButton.name = 'start'
+          startStopButton.value = 'start'
+          startStopButton.text = ':stopwatch: Start'
+        }
+        actions.push(startStopButton)
+
+        actions.push({
+          type: 'button',
+          name: 'task',
+          value: 'task',
+          text: ':exclamation: Top 3',
+        })
+
+        actions.push({
+          type: 'button',
+          name: 'list',
+          value: 'list',
+          text: ':notebook: List',
+        })        
+
+        attachment.actions = actions;
 
         answer.attachments = [attachment];
 
-        bot.api.chat.postMessage(answer, (postErr, postResponse) => {
-          if (!postErr) {
-            bot.botkit.log('task details sent');
-          } else {
-            bot.botkit.log('error sending task details', postResponse, postErr);
-          }
-        })
+        if (fromButton) {
+          bot.replyInteractive(message, answer)
+        } else {
+          bot.reply(message, answer)
+        }
       }
     }
   })
@@ -531,5 +768,9 @@ function changeTask(bot, message, text) {
 
 module.exports.addTask = addTask;
 module.exports.changeTask = changeTask;
+module.exports.startStopTask = startStopTask;
+module.exports.completeTask = completeTask;
+module.exports.taskDetails = taskDetails;
 module.exports.sendTasks = sendTasks;
 module.exports.sendAllTasks = sendAllTasks;
+module.exports.sendTaskList = sendTaskList;

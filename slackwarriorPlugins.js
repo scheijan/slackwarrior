@@ -51,12 +51,23 @@ const init = function (controller) {
                 let text = 'Got it. Your token is in my dossier and we can get started now.\n';
                 text = `${text}Why don't you try it out and add a task to your list? Maybe you need some milk? Try \`task add remember the milk\`\n`
                 text = `${text}And please feel to ask for \`task help\` at any time if you want me to remind you on how I can assist you with your tasks. :robot_face:`
-                const answer = { channel: message.channel, text, as_user: true }
-                bot.api.chat.postMessage(answer, (postErr, response) => {
-                  if (!postErr) {
-                    bot.addReaction(response, 'computer')
+                const answer = { channel: message.channel, as_user: true }
+                answer.attachments = [
+                  {
+                    pretext: text,
+                    mrkdwn_in: ['pretext'],
+                    callback_id: 'newtoken',
+                    actions: [
+                      {
+                        name: 'taskhelp',
+                        text: ':notebook: Task help',
+                        value: 'taskhelp',
+                        type: 'button',
+                      },
+                    ],
                   }
-                })
+                ]
+                bot.api.chat.postMessage(answer, (postErr, response) => {})
               } else {
                 bot.reply(message, messages.randomErrorMessage())
                 bot.botkit.log('error saving user token', saveErr)
@@ -64,11 +75,30 @@ const init = function (controller) {
             });
           // the convo did not end with status "completed"
           } else {
-            // this happens if the conversation ended prematurely for some reason
-            const answer = { channel: message.channel, text: 'Alright. If you want to try again please ask me about `onboarding` or just tap on the :computer:.', as_user: true }
-            bot.api.chat.postMessage(answer, (postErr, response) => {
-              if (!postErr) {
-                bot.addReaction(response, 'computer')
+            bot.botkit.log('XXXXXXXXXX')
+            const answer = {
+              channel: message.user,
+              as_user: true,
+              attachments: [
+                {
+                  pretext: 'Alright. If you want to try again please ask me about `onboarding` whenever you\'re ready.',
+                  mrkdwn_in: ['pretext'],
+                  callback_id: 'error',
+                  actions: [
+                    {
+                      name: 'onboarding',
+                      text: ':computer: Onboarding',
+                      value: 'onboarding',
+                      type: 'button',
+                    },
+                  ],
+                },
+              ],
+            }
+            bot.botkit.log('XXXXXXXXXX', answer)
+            bot.api.chat.postMessage(answer, (postErr) => {
+              if (postErr) {
+                bot.botkit.log('error posting reply', postErr)
               }
             })
           }
@@ -200,7 +230,7 @@ const init = function (controller) {
   }
 
   // specific help for the task commands
-  function helpTaskConvo(bot, message) {
+  function helpTaskConvo(bot, message, fromButton) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
       dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`\nYou\'ll have to replace `23` with the `short_id` of the task you want to adress.')
@@ -215,21 +245,33 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!\nI\'m Slackwarrior and I\'m here to help you manage your tasks.');
       dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.\nAnd also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
-
+      
       // at the end of the conversation
       dm.on('end', () => {
-        const answer = { channel: message.user, text: 'Please tell me if you want me to help you with the `onboarding` or tap on the :computer:\nIf you\'d like to know more about working with tasks, please message me with `task help` or just tap the :notebook: now.', as_user: true }
-        bot.api.chat.postMessage(answer, (postErr, response) => {
-          if (!postErr) {
-            // add the computer reaction for the user to click on to get more help regarding the onboarding process
-            bot.addReaction(response, 'computer')
+        const answer = {}
+        const attachment = {
+          pretext: 'Please tell me if you want me to help you with the `onboarding` or if you\'d like to see some more detailed `task help`.',
+          mrkdwn_in: ['pretext'],
+        }
+        const actions = [
+          {
+            name: 'onboarding',
+            text: ':computer: Onboarding',
+            value: 'onboarding',
+            type: 'button',
+          },
+          {
+            name: 'taskhelp',
+            text: ':notebook: Task help',
+            value: 'taskhelp',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = 'help'
 
-            // add the computer notebook for the user to click on to get more help regarding tasks
-            bot.addReaction(response, 'notebook')
-          } else {
-            bot.botkit.log('error sending message', response, postErr);
-          }
-        })
+        answer.attachments = [attachment]
+        bot.reply({ channel: message.user }, answer)
       })
     })
   }
@@ -301,9 +343,12 @@ const init = function (controller) {
     } else if (lcText.indexOf('task ') > -1 && /^-?\d+\.?\d*$/.test(lcText.split('task ')[1].split(' ')[0])) {
       text = text.substring(5, text.length)
       api.changeTask(bot, message, text)
+    // task all
+    } else if (lcText.indexOf('task all') > -1) {
+      api.sendAllTasks(bot, message);
     // task list
     } else if (lcText.indexOf('task list') > -1) {
-      api.sendAllTasks(bot, message);
+      api.sendTaskList(bot, message);
     // task
     } else if (lcText === 'task') {
       api.sendTasks(bot, message);
@@ -334,20 +379,28 @@ const init = function (controller) {
     // make it look like the bot is typing and wait a couple of seconds to increase the illusion of a user
     bot.startTyping(message);
     setTimeout(() => {
-      bot.reply(message, 'Well, hello everyone, I\'m Slackwarrior and I\'m here to help you manage your tasks. :notebook:')
+      bot.reply(message, '')
       bot.startTyping(message);
-      setTimeout(() => {
-        const answer = { channel: message.channel, text: 'Please feel free to ask me for `help` at any time or just tap the :grey_question: now.', as_user: true }
-        // add a question mark reaction to the message as a way for the users to get help
-        bot.api.chat.postMessage(answer, (err, response) => {
-          if (!err) {
-            bot.addReaction(response, 'grey_question')
-          } else {
-            bot.botkit.log('error sending message', response, err);
-          }
-        })
-      }, 3000)
-    }, 3000)
+      
+      const answer = {}
+      answer.attachments = [
+        {
+          pretext: 'Well, hello everyone, I\'m Slackwarrior and I\'m here to help you manage your tasks. :notebook:\nPlease feel free to ask me for `help` at any time!',
+          mrkdwn_in: ['pretext'],
+          callback_id: 'help',
+          actions: [
+            {
+              name: 'help',
+              text: ':question: Help',
+              value: 'help',
+              type: 'button',
+            }
+          ]
+        }
+      ]
+      bot.reply(message, answer)
+      
+    }, 2000)
   })
 
   // handle a user's request for onboarding
@@ -371,20 +424,29 @@ const init = function (controller) {
     bot.reply(message, 'http://tinyurl.com/craftybot-gif')
   })
 
-  // handle reactions added to the bot's messages
-  controller.on('reaction_added', (bot, message) => {
-    if (message.item_user === bot.identity.id && message.user !== bot.identity.id) {
-      bot.botkit.log('user reaction_added to a bot message', message.reaction)
-      // if it was a grey question mark, start the general help conversation
-      if (message.reaction === 'grey_question') {
-        helpConvo(bot, { type: 'message', user: message.user })
-      // if it was a computer, start the onboarding help
-      } else if (message.reaction === 'computer') {
-        onboardingConvo(bot, { type: 'message', user: message.user })
-      // if it was a notebook, start the task help conversation
-      } else if (message.reaction === 'notebook') {
-        helpTaskConvo(bot, { type: 'message', user: message.user })
-      }
+  // receive an interactive message, and reply with a message that will replace the original
+  controller.on('interactive_message_callback', (bot, message) => {
+    const short_id = message.callback_id
+    const command = message.actions[0].name
+    // check message.actions and message.callback_id to see what action to take...
+    if (command === 'done') {
+      api.completeTask(bot, message, short_id, true)
+    } else if (command === 'start') {
+      api.startStopTask(bot, message, short_id, 'start', true)
+    } else if (command === 'stop') {
+      api.startStopTask(bot, message, short_id, 'stop', true)
+    } else if (command === 'details') {
+      api.taskDetails(bot, message, short_id, true)
+    } else if (command === 'task') {
+      api.sendTasks(bot, message, true)
+    } else if (command === 'list') {
+      api.sendTaskList(bot, message, true)
+    } else if (command === 'onboarding') {
+      onboardingConvo(bot, { type: 'message', user: message.user }, true)
+    } else if (command === 'taskhelp') {
+      helpTaskConvo(bot, { type: 'message', user: message.user }, true)
+    } else if (command === 'help') {
+      helpConvo(bot, { type: 'message', user: message.user })
     }
   })
 }

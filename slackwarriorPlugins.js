@@ -200,7 +200,7 @@ const init = function (controller) {
   }
 
   // specific help for the task commands
-  function helpTaskConvo(bot, message) {
+  function helpTaskConvo(bot, message, fromButton) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('All commands to work with tasks start with `task`. Right now I know the following commands:')
       dm.say('`task help`, `task`, `task list`, `task add`, `task 23`, `task 23 done`, `task 23 start`, `task 23 stop`, `task 23 modify`, `task 23 annotate`\nYou\'ll have to replace `23` with the `short_id` of the task you want to adress.')
@@ -215,21 +215,33 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!\nI\'m Slackwarrior and I\'m here to help you manage your tasks.');
       dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.\nAnd also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
-
+      
       // at the end of the conversation
       dm.on('end', () => {
-        const answer = { channel: message.user, text: 'Please tell me if you want me to help you with the `onboarding` or tap on the :computer:\nIf you\'d like to know more about working with tasks, please message me with `task help` or just tap the :notebook: now.', as_user: true }
-        bot.api.chat.postMessage(answer, (postErr, response) => {
-          if (!postErr) {
-            // add the computer reaction for the user to click on to get more help regarding the onboarding process
-            bot.addReaction(response, 'computer')
+        const answer = {}
+        const attachment = {
+          pretext: 'Please tell me if you want me to help you with the `onboarding` or if you\'d like to see some more detailed `task help`.',
+          mrkdwn_in: ['pretext'],
+        }
+        const actions = [
+          {
+            name: 'onboarding',
+            text: ':computer: Onboarding',
+            value: 'onboarding',
+            type: 'button',
+          },
+          {
+            name: 'taskhelp',
+            text: ':notebook: Task help',
+            value: 'taskhelp',
+            type: 'button',
+          },
+        ]
+        attachment.actions = actions
+        attachment.callback_id = 'help'
 
-            // add the computer notebook for the user to click on to get more help regarding tasks
-            bot.addReaction(response, 'notebook')
-          } else {
-            bot.botkit.log('error sending message', response, postErr);
-          }
-        })
+        answer.attachments = [attachment]
+        bot.reply({ channel: message.user }, answer)
       })
     })
   }
@@ -337,20 +349,28 @@ const init = function (controller) {
     // make it look like the bot is typing and wait a couple of seconds to increase the illusion of a user
     bot.startTyping(message);
     setTimeout(() => {
-      bot.reply(message, 'Well, hello everyone, I\'m Slackwarrior and I\'m here to help you manage your tasks. :notebook:')
+      bot.reply(message, '')
       bot.startTyping(message);
-      setTimeout(() => {
-        const answer = { channel: message.channel, text: 'Please feel free to ask me for `help` at any time or just tap the :grey_question: now.', as_user: true }
-        // add a question mark reaction to the message as a way for the users to get help
-        bot.api.chat.postMessage(answer, (err, response) => {
-          if (!err) {
-            bot.addReaction(response, 'grey_question')
-          } else {
-            bot.botkit.log('error sending message', response, err);
-          }
-        })
-      }, 3000)
-    }, 3000)
+      
+      const answer = {}
+      answer.attachments = [
+        {
+          pretext: 'Well, hello everyone, I\'m Slackwarrior and I\'m here to help you manage your tasks. :notebook:\nPlease feel free to ask me for `help` at any time!',
+          mrkdwn_in: ['pretext'],
+          callback_id: 'help',
+          actions: [
+            {
+              name: 'help',
+              text: ':question: Help',
+              value: 'help',
+              type: 'button',
+            }
+          ]
+        }
+      ]
+      bot.reply(message, answer)
+      
+    }, 2000)
   })
 
   // handle a user's request for onboarding
@@ -408,6 +428,12 @@ const init = function (controller) {
       api.sendTasks(bot, message, true)
     } else if (command === 'list') {
       api.sendTaskList(bot, message, true)
+    } else if (command === 'onboarding') {
+      onboardingConvo(bot, { type: 'message', user: message.user }, true)
+    } else if (command === 'taskhelp') {
+      helpTaskConvo(bot, { type: 'message', user: message.user }, true)
+    } else if (command === 'help') {
+      helpConvo(bot, { type: 'message', user: message.user })
     }
   })
 }

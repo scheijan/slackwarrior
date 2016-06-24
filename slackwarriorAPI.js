@@ -408,7 +408,6 @@ function sendTaskList(bot, message, fromButton) {
       } else {
         bot.reply(message, answer)
       }
-     
     } else {
       bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
     }
@@ -506,17 +505,43 @@ function completeTask(bot, message, short_id, fromButton) {
             } else {
               answerText = `${answerText} One done, ${(tasks.length - 1)} to go :clap:`
             }
-            // if the message origin was a user clicking on a button, reply interactively to replace the original message
-            if (fromButton) {
-              bot.replyInteractive(message, answerText)
-            } else {
-              bot.reply(message, answerText)
-            }
 
             // if the completed task was not the one with the highest urgency
             if (completedUrgency < highestUrgency) {
-              bot.reply(message, messages.randomNotMostUrgendMessage())
+              answerText = `${answerText}\n${messages.randomNotMostUrgendMessage()}`
             }
+            const answer = {
+              attachments : [
+                {
+                  pretext: answerText,
+                  mrkdwn_in: ['pretext'],
+                  callback_id: 'completed',
+                  actions: [
+                    {
+                      type: 'button',
+                      name: 'task',
+                      value: 'task',
+                      text: ':exclamation: Top 3',
+                    },
+                    {
+                      type: 'button',
+                      name: 'list',
+                      value: 'list',
+                      text: ':notebook: List',
+                    }  
+                  ]
+                }
+              ]
+            }
+
+            // if the message origin was a user clicking on a button, reply interactively to replace the original message
+            if (fromButton) {
+              bot.replyInteractive(message, answer)
+            } else {
+              bot.reply(message, answer)
+            }
+
+            
           })
         });
       }

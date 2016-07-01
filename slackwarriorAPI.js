@@ -459,6 +459,51 @@ function addTask(bot, message, text) {
       }
       answer.text = `Alright, I've added task <https://inthe.am/tasks/${body.id}|${body.short_id}> to the list with priority ${priority}`
 
+      const attachment = {}
+      attachment.callback_id = body.short_id
+
+      const actions = [
+        {
+          name: 'done',
+          text: ':white_check_mark: Done',
+          value: 'done',
+          type: 'button',
+          style: 'primary',
+        },
+      ]
+
+      const startStopButton = {
+        type: 'button',
+      }
+      if (task.start) {
+        startStopButton.name = 'stop'
+        startStopButton.value = 'stop'
+        startStopButton.text = ':stopwatch: Stop'
+      } else {
+        startStopButton.name = 'start'
+        startStopButton.value = 'start'
+        startStopButton.text = ':stopwatch: Start'
+      }
+      actions.push(startStopButton)
+
+      actions.push({
+        type: 'button',
+        name: 'task',
+        value: 'task',
+        text: ':exclamation: Top 3',
+      })
+
+      actions.push({
+        type: 'button',
+        name: 'list',
+        value: 'list',
+        text: ':notebook: List',
+      })
+
+      attachment.actions = actions;
+
+      answer.attachments = [attachment];
+
       bot.api.chat.postMessage(answer, (postErr, postResponse) => {
         if (!postErr) {
           // bot.botkit.log('task details sent');

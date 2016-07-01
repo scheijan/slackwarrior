@@ -457,9 +457,10 @@ function addTask(bot, message, text) {
         channel: message.channel,
         as_user: true,
       }
-      answer.text = `Alright, I've added task <https://inthe.am/tasks/${task.id}|${task.short_id}> to the list with priority ${priority}`
 
       const attachment = {}
+
+      attachment.title = `Alright, I've added task <https://inthe.am/tasks/${task.id}|${task.short_id}> to the list with priority ${priority}`
       attachment.callback_id = task.short_id
 
       const actions = [
@@ -777,7 +778,6 @@ function taskDetails(bot, message, short_id, fromButton) {
         attachment.actions = actions;
 
         answer.attachments = [attachment];
-
         if (fromButton) {
           bot.replyInteractive(message, answer)
         } else {

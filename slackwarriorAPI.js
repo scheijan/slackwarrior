@@ -430,16 +430,16 @@ function addTask(bot, message, text) {
   bot.addReaction(message, 'thinking_face')
 
   // create a task object from the user input
-  const task = taskFunctions.cl2task(text)
+  const newTask = taskFunctions.cl2task(text)
 
   // get the token for the user
   getIntheamToken(bot, message, message.user, (token) => {
     const settings = prepareAPI('tasks', 'POST', token);
 
-    settings.body = task;
+    settings.body = newTask;
 
     // call the inthe.am API to add the new task
-    apiRequest(bot, message, settings, (err, response, body) => {
+    apiRequest(bot, message, settings, (err, response, task) => {
       // remove the reaction again
       bot.removeReaction(message, 'thinking_face')
 
@@ -457,10 +457,10 @@ function addTask(bot, message, text) {
         channel: message.channel,
         as_user: true,
       }
-      answer.text = `Alright, I've added task <https://inthe.am/tasks/${body.id}|${body.short_id}> to the list with priority ${priority}`
+      answer.text = `Alright, I've added task <https://inthe.am/tasks/${task.id}|${task.short_id}> to the list with priority ${priority}`
 
       const attachment = {}
-      attachment.callback_id = body.short_id
+      attachment.callback_id = task.short_id
 
       const actions = [
         {

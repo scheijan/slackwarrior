@@ -65,9 +65,13 @@ const init = function (controller) {
                         type: 'button',
                       },
                     ],
-                  }
+                  },
                 ]
-                bot.api.chat.postMessage(answer, (postErr, response) => {})
+                bot.api.chat.postMessage(answer, (postErr) => {
+                  if (postErr) {
+                    bot.botkit.log('error posting message in newTokenConvo')
+                  }
+                })
               } else {
                 bot.reply(message, messages.randomErrorMessage())
                 bot.botkit.log('error saving user token', saveErr)
@@ -75,7 +79,6 @@ const init = function (controller) {
             });
           // the convo did not end with status "completed"
           } else {
-            bot.botkit.log('XXXXXXXXXX')
             const answer = {
               channel: message.user,
               as_user: true,
@@ -95,7 +98,6 @@ const init = function (controller) {
                 },
               ],
             }
-            bot.botkit.log('XXXXXXXXXX', answer)
             bot.api.chat.postMessage(answer, (postErr) => {
               if (postErr) {
                 bot.botkit.log('error posting reply', postErr)
@@ -245,7 +247,7 @@ const init = function (controller) {
     bot.startPrivateConversation(message, (err, dm) => {
       dm.say('You\'re looking for help on how to use my services? I\'m glad you asked!\nI\'m Slackwarrior and I\'m here to help you manage your tasks.');
       dm.say('Luckily for me some very smart people built taskwarrior.org, a really awesome task manager, so I don\'t have to do all the hard work.\nAnd also luckily for me some other very smart people built inthe.am, which helps you sync your tasks among different devices and access them from every brower. Convenient, right?');
-      
+
       // at the end of the conversation
       dm.on('end', () => {
         const answer = {}
@@ -381,7 +383,7 @@ const init = function (controller) {
     setTimeout(() => {
       bot.reply(message, '')
       bot.startTyping(message);
-      
+
       const answer = {}
       answer.attachments = [
         {
@@ -394,12 +396,11 @@ const init = function (controller) {
               text: ':question: Help',
               value: 'help',
               type: 'button',
-            }
-          ]
-        }
+            },
+          ],
+        },
       ]
       bot.reply(message, answer)
-      
     }, 2000)
   })
 

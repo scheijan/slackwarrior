@@ -77,12 +77,12 @@ function apiRequest(bot, message, settings, cb) {
     // auth
     } else if (rc === 401 || rc === 403) {
       const answer = {
-        attachments : [
+        attachments: [
           {
             pretext: 'Oops, that didn\'t work. Looks like I remember your token wrong. If you want to tell me your token please ask me about `onboarding` any time.',
             mrkdwn_in: ['pretext'],
             callback_id: 'error',
-            actions : [
+            actions: [
               {
                 name: 'onboarding',
                 text: ':computer: Onboarding',
@@ -305,7 +305,6 @@ function sendTasks(bot, message, fromButton) {
       } else {
         bot.reply(message, answer)
       }
-     
     } else {
       bot.reply(message, 'Looks like you have no pending tasks right now! You should go relax for a while :beach_with_umbrella:')
     }
@@ -377,7 +376,6 @@ function sendTaskList(bot, message, fromButton) {
 
         const text = `created ${entryDiff}, last modified ${modifiedDiff}`
         attachment.text = text
-        
 
         // set the color according to the priority of the task
         if (task.priority === 'H') {
@@ -511,7 +509,8 @@ function completeTask(bot, message, short_id, fromButton) {
             }
 
             bot.botkit.log(`marked task ${short_id} for user ${message.user} as complete`);
-            let answerText = `Ok, task ${short_id} has been marked as complete - well done!`
+            const link = `<https://inthe.am/tasks/${task.id}|${task.short_id}>`
+            let answerText = `Ok, task ${link} has been marked as complete - well done!`
             if (tasks.length - 1 === 0) {
               answerText = `${answerText} That was the last pending task on your list! You should go relax for a while :beach_with_umbrella:`
             } else {
@@ -523,7 +522,7 @@ function completeTask(bot, message, short_id, fromButton) {
               answerText = `${answerText}\n${messages.randomNotMostUrgendMessage()}`
             }
             const answer = {
-              attachments : [
+              attachments: [
                 {
                   pretext: answerText,
                   mrkdwn_in: ['pretext'],
@@ -540,10 +539,10 @@ function completeTask(bot, message, short_id, fromButton) {
                       name: 'list',
                       value: 'list',
                       text: ':notebook: List',
-                    }  
-                  ]
-                }
-              ]
+                    },
+                  ],
+                },
+              ],
             }
 
             // if the message origin was a user clicking on a button, reply interactively to replace the original message
@@ -552,8 +551,6 @@ function completeTask(bot, message, short_id, fromButton) {
             } else {
               bot.reply(message, answer)
             }
-
-            
           })
         });
       }
@@ -597,7 +594,8 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
               bot.removeReaction(message, 'thinking_face')
 
               bot.botkit.log('changed task', message.user);
-              const answerText = `Alright, I've changed task ${body.short_id} for you.`
+              const link = `<https://inthe.am/tasks/${body.id}|${body.short_id}>`
+              const answerText = `Alright, I've changed task ${link} for you.`
               bot.reply(message, { text: answerText })
             })
           });
@@ -646,13 +644,14 @@ function startStopTask(bot, message, short_id, mode, fromButton) {
               if (fromButton) {
                 taskDetails(bot, message, short_id, true)
               } else {
+                const link = `<https://inthe.am/tasks/${task.id}|${task.short_id}>`
                 let answerText = 'Ok, I have '
                 if (mode === 'start') {
                   answerText = `${answerText} started`
                 } else {
                   answerText = `${answerText} stopped`
                 }
-                answerText = `${answerText} the timer for task ${short_id} for you. :stopwatch:`;
+                answerText = `${answerText} the timer for task ${link} for you. :stopwatch:`;
 
                 bot.reply(message, answerText)
               }
@@ -728,7 +727,7 @@ function taskDetails(bot, message, short_id, fromButton) {
           name: 'list',
           value: 'list',
           text: ':notebook: List',
-        })        
+        })
 
         attachment.actions = actions;
 

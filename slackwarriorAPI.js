@@ -642,9 +642,67 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
               bot.botkit.log('changed task', message.user);
               const link = `<https://inthe.am/tasks/${body.id}|${body.short_id}>`
               const answerText = `Alright, I've changed task ${link} for you.`
-              bot.reply(message, { text: answerText })
+
+              const answer = {
+                channel: message.channel,
+                as_user: true,
+              }
+              answer.text = answerText
+
+              const attachment = {}
+              attachment.callback_id = task.short_id
+
+              const actions = [
+                {
+                  name: 'done',
+                  text: ':white_check_mark: Done',
+                  value: 'done',
+                  type: 'button',
+                  style: 'primary',
+                },
+              ]
+
+              const startStopButton = {
+                type: 'button',
+              }
+              if (task.start) {
+                startStopButton.name = 'stop'
+                startStopButton.value = 'stop'
+                startStopButton.text = ':stopwatch: Stop'
+              } else {
+                startStopButton.name = 'start'
+                startStopButton.value = 'start'
+                startStopButton.text = ':stopwatch: Start'
+              }
+              actions.push(startStopButton)
+
+              actions.push({
+                type: 'button',
+                name: 'task',
+                value: 'task',
+                text: ':exclamation: Top 3',
+              })
+
+              actions.push({
+                type: 'button',
+                name: 'list',
+                value: 'list',
+                text: ':notebook: List',
+              })
+
+              attachment.actions = actions;
+
+              answer.attachments = [attachment];
+
+              bot.api.chat.postMessage(answer, (postErr, postResponse) => {
+                if (!postErr) {
+                  // bot.botkit.log('task details sent');
+                } else {
+                  bot.botkit.log('error sending task added message', postResponse, postErr);
+                }
+              })
             })
-          });
+          })
         }
       }
     }

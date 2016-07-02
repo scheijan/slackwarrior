@@ -488,6 +488,13 @@ function addTask(bot, message, text) {
       actions.push(startStopButton)
 
       actions.push({
+        name: 'details',
+        text: ':information_source: Details',
+        value: 'details',
+        type: 'button',
+      })
+
+      actions.push({
         type: 'button',
         name: 'task',
         value: 'task',
@@ -675,6 +682,13 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
                 startStopButton.text = ':stopwatch: Start'
               }
               actions.push(startStopButton)
+
+              actions.push({
+                name: 'details',
+                text: ':information_source: Details',
+                value: 'details',
+                type: 'button',
+              })
 
               actions.push({
                 type: 'button',

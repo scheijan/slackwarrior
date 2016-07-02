@@ -647,9 +647,9 @@ function modifyTask(bot, message, short_id, commandline, annotate) {
                 channel: message.channel,
                 as_user: true,
               }
-              answer.text = answerText
 
               const attachment = {}
+              attachment.title = answerText
               attachment.callback_id = task.short_id
 
               const actions = [

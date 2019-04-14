@@ -26,5 +26,4 @@ You will need four environment variables, one for your Slack `clientId`, one for
 ```clientId=01234567890.01234567890 clientSecret=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6 port=23232 DASHBOT_API_KEY=AbCdEfGhIjKlMnOpQrStUvWxYz01234567890235 node slackwarrior.js```
 
 ## Contributing ##
-Help is always welcome! If you are interested, please get in touch on our [Slack]
-(https://slackin.slackwarrior.org).
+Help is always welcome! If you are interested, please get in touch on our [Slack](https://slackin.slackwarrior.org).
